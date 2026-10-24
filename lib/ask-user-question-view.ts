@@ -65,10 +65,10 @@ export function parseAskUserQuestion(call: { toolName: string; input: unknown; r
   return questions.length > 0 ? questions : null;
 }
 
-/** What one answer reads as: the picked labels and the text typed alongside them. */
+/** What one answer reads as: the labels a multi-select picked, and the text typed alongside them. */
 function answerLabel(answer: Record<string, unknown>): string | null {
   const parts: string[] = [];
-  if (Array.isArray(answer.selected)) {
+  if (answer.kind === "multi" && Array.isArray(answer.selected)) {
     for (const selected of answer.selected) {
       if (typeof selected === "string" && selected) parts.push(selected);
     }
@@ -84,8 +84,10 @@ function answerLabel(answer: Record<string, unknown>): string | null {
  * result at all.
  */
 export function askUserQuestionOutcome(details: unknown): AskUserQuestionOutcome {
-  if (!isRecord(details) || !Array.isArray(details.answers)) return { kind: "unanswered" };
+  if (!isRecord(details)) return { kind: "unanswered" };
+  // A dismissal is a dismissal whatever else the result carries.
   if (details.cancelled === true) return { kind: "declined" };
+  if (!Array.isArray(details.answers)) return { kind: "unanswered" };
 
   const first = details.answers.find((answer) => isRecord(answer) && answer.questionIndex === 0);
   const label = first && isRecord(first) ? answerLabel(first) : null;
