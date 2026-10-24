@@ -909,7 +909,7 @@ test("drops a questionnaire's envelope but keeps an error result's text", () => 
   }
 });
 
-test("reads a questionnaire with no result as waiting while its message streams and unfinished once it has finished", () => {
+test("reads a questionnaire with no result as waiting while its run is live and unfinished once it has ended", () => {
   const block = {
     type: "toolCall",
     toolCallId: "call-ask-user-question-3",
@@ -917,8 +917,11 @@ test("reads a questionnaire with no result as waiting while its message streams 
     input: { questions: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }] }] },
   };
   const message = { role: "assistant", provider: "anthropic", model: "claude-test", content: [block] };
+  // Still streaming, or finished with the run that made the call still going: the card is waiting on the user.
   assert.match(textOf(renderMessage(message, { isStreaming: true })), /Pick · 1 question · waiting for an answer/);
-  assert.match(textOf(renderMessage(message, { isStreaming: false })), /Pick · 1 question · unfinished/);
+  assert.match(textOf(renderMessage(message, { isRunActive: true })), /Pick · 1 question · waiting for an answer/);
+  // A finished message on an ended run: pi never wrote a result.
+  assert.match(textOf(renderMessage(message, { isRunActive: false })), /Pick · 1 question · unfinished/);
 });
 
 test("labels an MCP call server/tool and indents a JSON result", (t) => {

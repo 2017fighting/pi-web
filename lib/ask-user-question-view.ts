@@ -85,20 +85,28 @@ function answerLabel(answer: Record<string, unknown>): string | null {
 
 /**
  * Where the call stands. A result that came back is `answered` — its `label` is
- * what the first question got, `null` when it was left blank — or `declined`
- * when it was cancelled. With no result, `isStreaming` decides between a message
- * still waiting on the user (`waiting`) and a finished one pi never paired a
- * result with (`unfinished`, i.e. the run was interrupted).
+ * what the first question got, `null` when it was left blank or when the result
+ * is an error — or `declined` when the user dismissed the questionnaire. With no
+ * result, `isLive` decides between a call the run is still waiting on (`waiting`)
+ * and one on a run that ended without pi writing a result (`unfinished`, i.e. the
+ * run was interrupted).
+ *
+ * `isLive` is the run, not just the streaming message: the assistant message
+ * that carries a questionnaire call ends (and its tool starts) before the answer
+ * arrives, so a streaming-only flag would read `unfinished` throughout the wait.
  */
 export function askUserQuestionState(
   result: { details?: unknown } | undefined,
-  isStreaming: boolean,
+  isLive: boolean,
 ): AskUserQuestionState {
-  if (!result) return isStreaming ? { kind: "waiting" } : { kind: "unfinished" };
+  if (!result) return isLive ? { kind: "waiting" } : { kind: "unfinished" };
 
   const details = result.details;
-  // A dismissal is a dismissal whatever else the result carries.
-  if (isRecord(details) && details.cancelled === true) return { kind: "declined" };
+  // A dismissal is a dismissal whatever else the result carries — but an error is
+  // not one: a host that cannot render the questionnaire answers with `cancelled`
+  // and an `error`, and the user never saw the questions. That result falls
+  // through to `answered` with no label, which reads `unanswered`.
+  if (isRecord(details) && details.cancelled === true && details.error === undefined) return { kind: "declined" };
 
   const first = isRecord(details) && Array.isArray(details.answers)
     ? details.answers.find((answer) => isRecord(answer) && answer.questionIndex === 0)
