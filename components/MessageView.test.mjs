@@ -876,6 +876,51 @@ test("reads an ask_user_question call as the exchange it was, not [object Object
   }
 });
 
+test("drops a questionnaire's envelope but keeps an error result's text", () => {
+  const block = {
+    type: "toolCall",
+    toolCallId: "call-ask-user-question-2",
+    toolName: "ask_user_question",
+    input: { questions: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }, { label: "B" }] }] },
+  };
+  const answered = {
+    role: "toolResult",
+    toolCallId: block.toolCallId,
+    content: [{ type: "text", text: 'User has answered your questions: "Which one?"="A". You can now continue with the user\'s answers in mind.' }],
+    details: { answers: [{ questionIndex: 0, question: "Which one?", kind: "option", answer: "A" }], cancelled: false },
+  };
+  const message = { role: "assistant", provider: "anthropic", model: "claude-test", content: [block] };
+  setToolCallExpanded(block.toolCallId, true);
+  try {
+    // The card says the answer itself; the envelope underneath is the same answer twice.
+    const answeredText = textOf(renderMessage(message, { toolResults: new Map([[block.toolCallId, answered]]) }));
+    assert.match(answeredText, /Pick · 1 question · A/);
+    assert.doesNotMatch(answeredText, /User has answered your questions/);
+
+    // An error's text is the whole message and stays visible, empty answers list and all.
+    const error = {
+      ...answered,
+      content: [{ type: "text", text: "Error: UI not available (running in non-interactive mode)" }],
+      details: { answers: [], cancelled: true, error: "no_ui" },
+    };
+    assert.match(textOf(renderMessage(message, { toolResults: new Map([[block.toolCallId, error]]) })), /UI not available/);
+  } finally {
+    clearExpandedToolCalls();
+  }
+});
+
+test("reads a questionnaire with no result as waiting while its message streams and unfinished once it has finished", () => {
+  const block = {
+    type: "toolCall",
+    toolCallId: "call-ask-user-question-3",
+    toolName: "ask_user_question",
+    input: { questions: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }] }] },
+  };
+  const message = { role: "assistant", provider: "anthropic", model: "claude-test", content: [block] };
+  assert.match(textOf(renderMessage(message, { isStreaming: true })), /Pick · 1 question · waiting for an answer/);
+  assert.match(textOf(renderMessage(message, { isStreaming: false })), /Pick · 1 question · unfinished/);
+});
+
 test("labels an MCP call server/tool and indents a JSON result", (t) => {
   const block = {
     type: "toolCall",

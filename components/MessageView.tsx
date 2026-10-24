@@ -14,7 +14,7 @@ import { formatTurnDuration } from "@/lib/turn-duration";
 import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, type SplitDiffFile, type SplitDiffGap, type UnifiedDiffLine } from "@/lib/patch";
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
-import { askUserQuestionSummary, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
+import { askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummary, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
@@ -1004,7 +1004,7 @@ function BlockView({ block, searchTarget, toolResults, isStreaming, streamingDur
     const tc = block as ToolCallContent;
     const result = toolResults?.get(tc.toolCallId);
     const duration = toolCallDurations?.get(tc.toolCallId);
-    return <ToolCallBlock block={tc} result={result} duration={duration} onOpenSubagent={onOpenSubagent} />;
+    return <ToolCallBlock block={tc} result={result} duration={duration} isStreaming={isStreaming} onOpenSubagent={onOpenSubagent} />;
   }
   return null;
 }
@@ -1198,7 +1198,7 @@ export function formatToolDuration(ms: number): string {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m ${remainder}s`;
 }
 
-function ToolCallBlock({ block, result, duration, onOpenSubagent }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; onOpenSubagent?: (sessionId: string, label: string) => void }) {
+function ToolCallBlock({ block, result, duration, isStreaming, onOpenSubagent }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; isStreaming?: boolean; onOpenSubagent?: (sessionId: string, label: string) => void }) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(() => isToolCallExpanded(block.toolCallId));
   const toggleExpanded = () => {
@@ -1224,6 +1224,12 @@ function ToolCallBlock({ block, result, duration, onOpenSubagent }: { block: Too
   // The questionnaire an `ask_user_question` call carried, or null for any other
   // call — another name, another shape, or arguments still streaming.
   const questionnaire = parseAskUserQuestion(block);
+  // Where that call stands: answered or declined from its result, else waiting
+  // while this message streams and unfinished once it has finished without one.
+  const questionState = questionnaire === null ? null : askUserQuestionState(result, isStreaming === true);
+  // The card already says what came back, so the result's envelope underneath it
+  // would print the same answer twice.
+  const hidesResult = questionState !== null && askUserQuestionHidesResult(result);
   // The one predicate: which view of its own this card has, or null for the
   // generic one (flat rows, else the JSON).
   const cardView = toolCardViewOf({ writtenFileText, patchFiles, codemodeCode, questionnaire });
@@ -1253,7 +1259,7 @@ function ToolCallBlock({ block, result, duration, onOpenSubagent }: { block: Too
   // summary of the exchange.
   const cardPreview = patchLabel
     ?? (codemode ? codemodeScriptPreview(codemode.code) : null)
-    ?? (questionnaire ? askUserQuestionSummary(questionnaire, result?.details, t) : null)
+    ?? (questionnaire && questionState ? askUserQuestionSummary(questionnaire, questionState, t) : null)
     ?? getToolPreview(block);
 
   return (
@@ -1379,7 +1385,7 @@ function ToolCallBlock({ block, result, duration, onOpenSubagent }: { block: Too
           isError={isError}
         />
       )}
-      {expanded && result && cardView !== "patch" && !codemodeRunning && (
+      {expanded && result && cardView !== "patch" && !codemodeRunning && !hidesResult && (
         resultDiff ? (
           <PairedDiffResult
             diff={resultDiff}
