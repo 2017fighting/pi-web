@@ -17,6 +17,7 @@ const {
   ThinkingBlock,
   formatToolDuration,
   getModelDisplayName,
+  toolCardViewOf,
   getTokenEstimateText,
   getToolCallInputText,
   replaceUserMessageText,
@@ -812,6 +813,67 @@ test("a codemode call with no script or streaming input falls back to a plain bo
   assert.match(otherHtml, /<table/);
   assert.match(otherHtml, />x<\/td>/);
   assert.doesNotMatch(textOf(otherHtml), /"script": "x"/);
+});
+
+test("picks a tool card's own view through one predicate, beside the generic card", () => {
+  const generic = { writtenFileText: null, patchFiles: null, codemodeCode: null, questionnaire: null };
+  assert.equal(toolCardViewOf(generic), null);
+  assert.equal(toolCardViewOf({ ...generic, writtenFileText: "one\ntwo" }), "write");
+  assert.equal(toolCardViewOf({ ...generic, patchFiles: [{ oldPath: "a.ts", newPath: "a.ts", rows: [] }] }), "patch");
+  assert.equal(toolCardViewOf({ ...generic, codemodeCode: "return 1" }), "codemode");
+  assert.equal(toolCardViewOf({ ...generic, questionnaire: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }] }] }), "questionnaire");
+});
+
+test("reads an ask_user_question call as the exchange it was, not [object Object]", () => {
+  const block = {
+    type: "toolCall",
+    toolCallId: "call-ask-user-question-1",
+    toolName: "ask_user_question",
+    input: {
+      questions: [
+        {
+          question: "Which auth method should the API use?",
+          header: "Auth method",
+          options: [
+            { label: "OAuth", description: "Delegate to the provider." },
+            { label: "API key", description: "Keep a shared secret." },
+          ],
+        },
+        {
+          question: "Where should sessions live?",
+          header: "Storage",
+          options: [{ label: "Disk" }, { label: "S3" }],
+        },
+      ],
+    },
+  };
+  const result = {
+    role: "toolResult",
+    toolCallId: block.toolCallId,
+    content: [{ type: "text", text: "User has answered your questions: \"Which auth method should the API use?\"=\"OAuth\". You can now continue with the user's answers in mind." }],
+    details: {
+      answers: [{ questionIndex: 0, question: "Which auth method should the API use?", kind: "option", answer: "OAuth" }],
+      cancelled: false,
+    },
+    durationMs: 2_400,
+  };
+  clearExpandedToolCalls();
+  try {
+    const html = renderMessage(
+      { role: "assistant", provider: "anthropic", model: "claude-test", content: [block], timestamp: 1_000_000 },
+      { toolResults: new Map([[block.toolCallId, result]]) },
+    );
+    const text = textOf(html);
+    assert.match(text, /ask_user_question/);
+    // The first question's header, how many questions the call carried, and what came back.
+    assert.match(text, /Auth method · 2 questions · OAuth/);
+    // The run time keeps the slot the card already uses.
+    assert.match(html, />2\.4s</);
+    assert.doesNotMatch(text, /\[object Object\]/);
+    assert.doesNotMatch(text, /"questions"/);
+  } finally {
+    clearExpandedToolCalls();
+  }
 });
 
 test("labels an MCP call server/tool and indents a JSON result", (t) => {

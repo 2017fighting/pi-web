@@ -14,6 +14,7 @@ import { formatTurnDuration } from "@/lib/turn-duration";
 import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, type SplitDiffFile, type SplitDiffGap, type UnifiedDiffLine } from "@/lib/patch";
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
+import { askUserQuestionSummary, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
@@ -1164,6 +1165,28 @@ function recordedDurationMs(value: unknown): number | undefined {
 /** Below this a tool card shows no time: it would read 0.0s on every quick read or search. */
 const TOOL_DURATION_MIN_MS = 100;
 
+/** A view of its own a tool card can show instead of its arguments. */
+export type ToolCardView = "write" | "patch" | "codemode" | "questionnaire";
+
+/**
+ * Which view of its own a tool call has, or null for the generic card (its
+ * arguments as rows, else as JSON). The one place the card decides, so a new
+ * view is one case here rather than one more clause in every condition that
+ * guards the generic body.
+ */
+export function toolCardViewOf(views: {
+  writtenFileText: string | null;
+  patchFiles: SplitDiffFile[] | null;
+  codemodeCode: string | null;
+  questionnaire: AskUserQuestionQuestion[] | null;
+}): ToolCardView | null {
+  if (views.writtenFileText !== null) return "write";
+  if (views.patchFiles !== null) return "patch";
+  if (views.codemodeCode !== null) return "codemode";
+  if (views.questionnaire !== null) return "questionnaire";
+  return null;
+}
+
 /** A tool's run time as the pi CLI's "Took" writes it: 2.4s, then 3m 5s, then 1h 2m 5s. */
 export function formatToolDuration(ms: number): string {
   const seconds = ms / 1000;
@@ -1198,13 +1221,16 @@ function ToolCallBlock({ block, result, duration, onOpenSubagent }: { block: Too
   const codemode = codemodeCode === null ? null : { code: codemodeCode, ...codemodeCalls(result?.details) };
   // A running script's progress snapshot has calls but no content yet.
   const codemodeRunning = codemode !== null && result !== undefined && result.content.length === 0;
+  // The questionnaire an `ask_user_question` call carried, or null for any other
+  // call — another name, another shape, or arguments still streaming.
+  const questionnaire = parseAskUserQuestion(block);
+  // The one predicate: which view of its own this card has, or null for the
+  // generic one (flat rows, else the JSON).
+  const cardView = toolCardViewOf({ writtenFileText, patchFiles, codemodeCode, questionnaire });
 
   // Flat arguments as rows instead of a JSON blob, unless the card has a view of
-  // its own (a write's file text, codemode, an applied patch). See `lib/tool-fields.ts`.
-  const toolFields =
-    !isStreamingInput && writtenFileText === null && codemode === null && patchFiles === null
-      ? toolFieldsOfInput(block.input)
-      : null;
+  // its own. See `lib/tool-fields.ts`.
+  const toolFields = cardView === null && !isStreamingInput ? toolFieldsOfInput(block.input) : null;
 
   // `server/tool` instead of the registered `mcp__server__tool`, as pi's TUI shows it.
   const mcpLabel = mcpToolLabel(block.toolName, result?.details);
@@ -1221,6 +1247,14 @@ function ToolCallBlock({ block, result, duration, onOpenSubagent }: { block: Too
     || (isApplyPatchToolName(block.toolName) && applyPatchResultHasFailures(result?.details));
   const subagent = isSubagentToolDetails(result?.details) ? result.details : null;
   const codemodeCallCount = codemode ? codemode.calls.length + codemode.omitted : 0;
+
+  // The one line beside the tool's name, from the card's own view when it has
+  // one: an applied patch's files, a script's first line, a questionnaire's
+  // summary of the exchange.
+  const cardPreview = patchLabel
+    ?? (codemode ? codemodeScriptPreview(codemode.code) : null)
+    ?? (questionnaire ? askUserQuestionSummary(questionnaire, result?.details, t) : null)
+    ?? getToolPreview(block);
 
   return (
     <div
@@ -1263,9 +1297,7 @@ function ToolCallBlock({ block, result, duration, onOpenSubagent }: { block: Too
             ) : block.toolName}
           </span>
           <span style={{ color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-            {isStreamingInput
-              ? t("chat.generatingToolInput")
-              : (patchLabel ?? (codemode ? codemodeScriptPreview(codemode.code) : getToolPreview(block)))}
+            {isStreamingInput ? t("chat.generatingToolInput") : cardPreview}
           </span>
           {codemodeCallCount > 0 && (
             <span style={{ fontSize: 11, color: "var(--text-dim)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
@@ -1293,7 +1325,7 @@ function ToolCallBlock({ block, result, duration, onOpenSubagent }: { block: Too
       </div>
 
       {/* ── Expanded: input args (only when no richer view exists); a codemode script in place of its JSON ── */}
-      {expanded && (isStreamingInput || !isEditTool) && !patchFiles && (
+      {expanded && cardView !== "patch" && (isStreamingInput || !isEditTool) && (
         toolFields ? (
           <div
             style={{
@@ -1333,21 +1365,21 @@ function ToolCallBlock({ block, result, duration, onOpenSubagent }: { block: Too
       {resultImages.length > 0 && <ResultImages images={resultImages} isError={isError} />}
 
       {/* ── Expanded: applied-patch split diff ── */}
-      {expanded && patchFiles && (
+      {expanded && cardView === "patch" && patchFiles && (
         <div style={{ borderTop: "1px solid rgba(34,197,94,0.15)", background: "var(--bg)" }}>
           <SplitFilesView files={patchFiles} />
         </div>
       )}
 
       {/* ── Paired result — only shown when expanded ── */}
-      {expanded && result && patchFiles && isError && (
+      {expanded && result && cardView === "patch" && isError && (
         <PairedResult
           text={resultText ?? ""}
           isEmpty={resultIsEmpty}
           isError={isError}
         />
       )}
-      {expanded && result && !patchFiles && !codemodeRunning && (
+      {expanded && result && cardView !== "patch" && !codemodeRunning && (
         resultDiff ? (
           <PairedDiffResult
             diff={resultDiff}
