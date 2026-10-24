@@ -27,10 +27,16 @@ export interface AskUserQuestionQuestion {
 /** The i18n translate function shape this module needs. */
 export type Translate = (key: string, params?: Record<string, string | number>) => string;
 
-export type AskUserQuestionOutcome =
-  | { kind: "answered"; label: string }
+/**
+ * Where an `ask_user_question` call stands: what came back, or — with no result
+ * yet — whether the message is still waiting on the user or was interrupted
+ * before pi wrote one.
+ */
+export type AskUserQuestionState =
+  | { kind: "answered"; label: string | null }
   | { kind: "declined" }
-  | { kind: "unanswered" };
+  | { kind: "waiting" }
+  | { kind: "unfinished" };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -78,38 +84,66 @@ function answerLabel(answer: Record<string, unknown>): string | null {
 }
 
 /**
- * What came back for the first question: the chosen option's label (or the
- * typed text, or the labels a multi-select picked), `declined` for a cancelled
- * call, and `unanswered` for a question left blank — and for a call with no
- * result at all.
+ * Where the call stands. A result that came back is `answered` — its `label` is
+ * what the first question got, `null` when it was left blank — or `declined`
+ * when it was cancelled. With no result, `isStreaming` decides between a message
+ * still waiting on the user (`waiting`) and a finished one pi never paired a
+ * result with (`unfinished`, i.e. the run was interrupted).
  */
-export function askUserQuestionOutcome(details: unknown): AskUserQuestionOutcome {
-  if (!isRecord(details)) return { kind: "unanswered" };
-  // A dismissal is a dismissal whatever else the result carries.
-  if (details.cancelled === true) return { kind: "declined" };
-  if (!Array.isArray(details.answers)) return { kind: "unanswered" };
+export function askUserQuestionState(
+  result: { details?: unknown } | undefined,
+  isStreaming: boolean,
+): AskUserQuestionState {
+  if (!result) return isStreaming ? { kind: "waiting" } : { kind: "unfinished" };
 
-  const first = details.answers.find((answer) => isRecord(answer) && answer.questionIndex === 0);
-  const label = first && isRecord(first) ? answerLabel(first) : null;
-  return label === null ? { kind: "unanswered" } : { kind: "answered", label };
+  const details = result.details;
+  // A dismissal is a dismissal whatever else the result carries.
+  if (isRecord(details) && details.cancelled === true) return { kind: "declined" };
+
+  const first = isRecord(details) && Array.isArray(details.answers)
+    ? details.answers.find((answer) => isRecord(answer) && answer.questionIndex === 0)
+    : undefined;
+  return { kind: "answered", label: first && isRecord(first) ? answerLabel(first) : null };
 }
 
 /**
+ * Whether the result's text is the answer the card already carries, so the card
+ * drops it: the envelope's `"question"="answer"` pairs are exactly what the
+ * summary shows. An error's text is the whole message and a result with no
+ * answers list says something the card does not, so both keep theirs.
+ */
+export function askUserQuestionHidesResult(result: { details?: unknown; isError?: boolean } | undefined): boolean {
+  if (!result || result.isError === true) return false;
+  const details = result.details;
+  // The extension answers a host that cannot render the questionnaire with
+  // `answers: []` and an `error` ("UI not available", "this client cannot
+  // render the questionnaire"): that text is the message, not a duplicate.
+  if (!isRecord(details) || details.error !== undefined) return false;
+  return Array.isArray(details.answers);
+}
+
+/** The key each settled-or-not state reads by, apart from `answered`'s own label. */
+const STATE_KEY = {
+  declined: "askUserQuestion.declined",
+  waiting: "askUserQuestion.waiting",
+  unfinished: "askUserQuestion.unfinished",
+} as const;
+
+/**
  * The collapsed card's one line: the first question's header chip, how many
- * questions the call carried, and what came back. The run time is the card's
- * own slot, not this text's.
+ * questions the call carried, and where the call stands. The run time is the
+ * card's own slot, not this text's.
  */
 export function askUserQuestionSummary(
   questions: readonly AskUserQuestionQuestion[],
-  details: unknown,
+  state: AskUserQuestionState,
   t: Translate,
 ): string {
   const count = questions.length === 1
     ? t("askUserQuestion.questionCountOne")
     : t("askUserQuestion.questionCount", { count: questions.length });
-  const outcome = askUserQuestionOutcome(details);
-  const answer = outcome.kind === "answered"
-    ? outcome.label
-    : t(outcome.kind === "declined" ? "askUserQuestion.declined" : "askUserQuestion.unanswered");
+  const answer = state.kind === "answered"
+    ? state.label ?? t("askUserQuestion.unanswered")
+    : t(STATE_KEY[state.kind]);
   return [questions[0]?.header, count, answer].filter((part) => part).join(" · ");
 }

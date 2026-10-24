@@ -186,6 +186,8 @@ export const enLocale: LocalePlugin = {
     "askUserQuestion.questionCountOne": "1 question",
     "askUserQuestion.declined": "declined",
     "askUserQuestion.unanswered": "unanswered",
+    "askUserQuestion.waiting": "waiting for an answer",
+    "askUserQuestion.unfinished": "unfinished",
     "agentSwitcher.title": "Agents",
     "agentSwitcher.titleRunning": "Agents: {count} running",
     "agentSwitcher.main": "Main agent",

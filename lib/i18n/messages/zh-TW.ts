@@ -186,6 +186,8 @@ export const zhTWLocale: LocalePlugin = {
     "askUserQuestion.questionCountOne": "1 個問題",
     "askUserQuestion.declined": "已拒絕",
     "askUserQuestion.unanswered": "未回答",
+    "askUserQuestion.waiting": "等待回答",
+    "askUserQuestion.unfinished": "未完成",
     "agentSwitcher.title": "Agents",
     "agentSwitcher.titleRunning": "Agents：{count} 個執行中",
     "agentSwitcher.main": "主 Agent",
