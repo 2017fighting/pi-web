@@ -16,6 +16,8 @@ export interface AskUserQuestionOption {
   label: string;
   /** What the choice means or trades off; empty when the call carried none. */
   description: string;
+  /** Markdown the model offers for comparison — a mockup, snippet or config sample; empty when none. */
+  preview: string;
 }
 
 export interface AskUserQuestionQuestion {
@@ -51,7 +53,11 @@ function questionOf(value: unknown): AskUserQuestionQuestion | null {
   const options: AskUserQuestionOption[] = [];
   for (const option of value.options) {
     if (!isRecord(option) || typeof option.label !== "string") return null;
-    options.push({ label: option.label, description: typeof option.description === "string" ? option.description : "" });
+    options.push({
+      label: option.label,
+      description: typeof option.description === "string" ? option.description : "",
+      preview: typeof option.preview === "string" ? option.preview : "",
+    });
   }
   return {
     question: value.question,
@@ -174,6 +180,23 @@ export interface AskUserQuestionBlock {
   note: string | null;
   /** A non-cancelled result came back with nothing for this question. */
   unanswered: boolean;
+  /** The chosen single-select option's preview Markdown; null when the answer has none. */
+  preview: string | null;
+}
+
+/**
+ * The preview to show for one answer: the chosen option's own, and only when a
+ * single option was picked. A preview belongs to a single-select choice, so a
+ * typed answer and a multi-select pick show none, however their options read.
+ */
+function chosenPreview(
+  answer: Record<string, unknown>,
+  labels: readonly string[],
+  question: AskUserQuestionQuestion,
+): string | null {
+  if (answer.kind !== "option" || labels.length !== 1) return null;
+  const chosen = question.options.find((option) => option.label === labels[0]);
+  return chosen && chosen.preview ? chosen.preview : null;
 }
 
 /**
@@ -181,7 +204,8 @@ export interface AskUserQuestionBlock {
  * the labels to tick and the text and note to show. Answers are matched to
  * questions by `questionIndex`, and a question with no answer reads `unanswered`
  * only on a non-cancelled result, so a partial submit is legible while a decline
- * is not dressed up as one.
+ * is not dressed up as one. A block also carries the chosen option's preview, so
+ * the card can show the artifact that option offered.
  */
 export function askUserQuestionBlocks(
   questions: readonly AskUserQuestionQuestion[],
@@ -193,7 +217,7 @@ export function askUserQuestionBlocks(
   return questions.map((question, index) => {
     const answer = answers.find((entry) => isRecord(entry) && entry.questionIndex === index);
     if (!isRecord(answer)) {
-      return { question, selected: [], custom: null, note: null, unanswered: submitted };
+      return { question, selected: [], custom: null, note: null, unanswered: submitted, preview: null };
     }
     const { labels, custom } = readAnswer(answer);
     return {
@@ -202,6 +226,7 @@ export function askUserQuestionBlocks(
       custom,
       note: typeof answer.notes === "string" && answer.notes ? answer.notes : null,
       unanswered: false,
+      preview: chosenPreview(answer, labels, question),
     };
   });
 }
