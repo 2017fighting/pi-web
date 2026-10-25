@@ -73,7 +73,7 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
               >
                 {chosen ? "✓" : "○"}
               </span>
-              <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
                 <span style={{ color: "var(--text-muted)", fontWeight: chosen ? 600 : 400 }}>{option.label}</span>
                 {option.description && (
                   <span style={{ color: "var(--text-dim)", overflowWrap: "anywhere" }}>{option.description}</span>
@@ -81,7 +81,7 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
                 {chosen && block.preview !== null && (
                   <MarkdownBody className="markdown-questionnaire-preview">{block.preview}</MarkdownBody>
                 )}
-              </span>
+              </div>
             </li>
           );
         })}

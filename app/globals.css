@@ -1342,39 +1342,28 @@ pre, code {
   margin: 4px 0;
 }
 
-.markdown-questionnaire-question {
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) {
   line-height: 1.4;
 }
-.markdown-questionnaire-question p { margin: 0 0 4px; }
-.markdown-questionnaire-question p:last-child { margin-bottom: 0; }
-.markdown-questionnaire-question ul,
-.markdown-questionnaire-question ol {
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) p { margin: 0 0 4px; }
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) p:last-child { margin-bottom: 0; }
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) ul,
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) ol {
   margin: 2px 0 4px;
 }
-.markdown-questionnaire-question .markdown-table-frame,
-.markdown-questionnaire-question .markdown-code-block {
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) .markdown-table-frame,
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) .markdown-code-block {
   margin: 4px 0;
 }
 
-/* The chosen option's preview: a bordered block hanging under that option, so it
-   reads as the artifact that choice offered rather than a stray section. */
+/* The chosen option's preview: an indented block under that option, so it reads as
+   the artifact that choice offered rather than a stray section. */
 .markdown-questionnaire-preview {
-  margin: 4px 0 2px;
+  margin: 4px 0 2px 12px;
   padding: 6px 8px;
-  border-left: 2px solid rgba(34, 197, 94, 0.4);
+  border-left: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
   border-radius: 0 4px 4px 0;
-  background: rgba(34, 197, 94, 0.06);
-  line-height: 1.4;
-}
-.markdown-questionnaire-preview p { margin: 0 0 4px; }
-.markdown-questionnaire-preview p:last-child { margin-bottom: 0; }
-.markdown-questionnaire-preview ul,
-.markdown-questionnaire-preview ol {
-  margin: 2px 0 4px;
-}
-.markdown-questionnaire-preview .markdown-table-frame,
-.markdown-questionnaire-preview .markdown-code-block {
-  margin: 4px 0;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 
 .markdown-compaction-message {

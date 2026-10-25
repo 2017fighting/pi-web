@@ -185,18 +185,14 @@ export interface AskUserQuestionBlock {
 }
 
 /**
- * The preview to show for one answer: the chosen option's own, and only when a
- * single option was picked. A preview belongs to a single-select choice, so a
- * typed answer and a multi-select pick show none, however their options read.
+ * The preview to show for one answer, when `label` names the single option the
+ * answer picked. A preview belongs to a single-select choice, so a typed answer
+ * and a multi-select pick show none, however their options read.
  */
-function chosenPreview(
-  answer: Record<string, unknown>,
-  labels: readonly string[],
-  question: AskUserQuestionQuestion,
-): string | null {
-  if (answer.kind !== "option" || labels.length !== 1) return null;
-  const chosen = question.options.find((option) => option.label === labels[0]);
-  return chosen && chosen.preview ? chosen.preview : null;
+function chosenPreview(label: string | undefined, question: AskUserQuestionQuestion): string | null {
+  if (label === undefined) return null;
+  const chosen = question.options.find((option) => option.label === label);
+  return chosen?.preview || null;
 }
 
 /**
@@ -226,7 +222,7 @@ export function askUserQuestionBlocks(
       custom,
       note: typeof answer.notes === "string" && answer.notes ? answer.notes : null,
       unanswered: false,
-      preview: chosenPreview(answer, labels, question),
+      preview: chosenPreview(answer.kind === "option" ? labels[0] : undefined, question),
     };
   });
 }

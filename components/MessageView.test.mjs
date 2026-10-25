@@ -985,8 +985,8 @@ test("shows the chosen option's preview as Markdown under it, and keeps the othe
       question: "Which auth method should the API use?",
       header: "Auth method",
       options: [
-        { label: "OAuth", description: "Delegate to the provider.", preview: "```http\nGET /oauth/authorize\n```" },
-        { label: "API key", description: "Keep a shared secret.", preview: "```http\nX-API-Key: shared-secret\n```" },
+        { label: "OAuth", description: "Delegate to the provider.", preview: "**OAuth flow**\n\nRedirect, then callback." },
+        { label: "API key", description: "Keep a shared secret.", preview: "**API-key config**\n\nHeader only." },
       ],
     },
   ]);
@@ -1000,13 +1000,11 @@ test("shows the chosen option's preview as Markdown under it, and keeps the othe
   const html = renderQuestionnaire(block, result);
   const text = textOf(html);
 
-  // The chosen option's preview renders as Markdown, inside a block of its own that
-  // hangs under the option it belongs to.
-  assert.match(html, /class="markdown-body markdown-questionnaire-preview"/);
-  assert.match(text, /GET \/oauth\/authorize/);
-  assert.ok(text.indexOf("OAuth") < text.indexOf("GET /oauth/authorize"));
+  // The chosen option's preview renders as Markdown: its own text, in bold.
+  assert.match(html, /<strong>OAuth flow<\/strong>/);
+  assert.match(text, /Redirect, then callback\./);
   // The option that was not chosen keeps its preview hidden.
-  assert.doesNotMatch(text, /X-API-Key/);
+  assert.doesNotMatch(text, /API-key config/);
 });
 
 test("shows no preview for a multi-select or a typed answer", (t) => {
@@ -1016,8 +1014,8 @@ test("shows no preview for a multi-select or a typed answer", (t) => {
       header: "Storage",
       multiSelect: true,
       options: [
-        { label: "Disk", description: "Local disk.", preview: "path: /var/sessions" },
-        { label: "S3", description: "Object storage.", preview: "bucket: s3://sessions" },
+        { label: "Disk", description: "Local disk.", preview: "**Disk layout**\n\n/var/sessions" },
+        { label: "S3", description: "Object storage.", preview: "**S3 layout**\n\nbucket: s3://sessions" },
       ],
     },
   ]);
@@ -1028,14 +1026,14 @@ test("shows no preview for a multi-select or a typed answer", (t) => {
     { answers: [{ questionIndex: 0, question: "Where should sessions live?", kind: "multi", answer: null, selected: ["Disk"] }], cancelled: false },
     'User has answered your questions: "Where should sessions live?"="Disk".',
   ));
-  assert.doesNotMatch(textOf(multiHtml), /path: \/var\/sessions|bucket: s3/);
+  assert.doesNotMatch(textOf(multiHtml), /Disk layout|S3 layout/);
 
   const custom = questionnaireCall("call-ask-user-question-preview-custom", [
     {
       question: "Which auth method should the API use?",
       header: "Auth method",
       options: [
-        { label: "OAuth", description: "Delegate to the provider.", preview: "```http\nGET /oauth/authorize\n```" },
+        { label: "OAuth", description: "Delegate to the provider.", preview: "**OAuth flow**\n\nRedirect, then callback." },
         { label: "API key", description: "Keep a shared secret." },
       ],
     },
@@ -1046,7 +1044,7 @@ test("shows no preview for a multi-select or a typed answer", (t) => {
     { answers: [{ questionIndex: 0, question: "Which auth method should the API use?", kind: "custom", answer: "Something else" }], cancelled: false },
     "User has answered your questions: \"Which auth method should the API use?\"=\"Something else\".",
   ));
-  assert.doesNotMatch(textOf(customHtml), /GET \/oauth\/authorize/);
+  assert.doesNotMatch(textOf(customHtml), /OAuth flow/);
 });
 
 test("expands a multi-select questionnaire with its tag, ticks, custom answer and note", (t) => {
