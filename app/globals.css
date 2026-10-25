@@ -21,8 +21,6 @@
   --color-assistant-bg: var(--assistant-bg);
   --color-tool-bg: var(--tool-bg);
   --color-bg-subtle: var(--bg-subtle);
-  --color-success: var(--success);
-  --color-error: var(--error);
   --font-mono-font: var(--font-mono);
 }
 

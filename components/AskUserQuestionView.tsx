@@ -3,6 +3,7 @@
 import { MarkdownBody } from "./MarkdownBody";
 import { TRANSCRIPT_NOTICE_WARNING_COLOR } from "./TranscriptNotices";
 import { useI18n } from "@/hooks/useI18n";
+import { statusSeparatorBorder } from "@/lib/status-colors";
 import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
 
 // The expanded `ask_user_question` card: the questionnaire as a read-only record.
@@ -99,7 +100,7 @@ export function AskUserQuestionView({ blocks, isError }: {
   return (
     <div
       style={{
-        borderTop: isError ? "1px solid color-mix(in srgb, var(--error) 25%, transparent)" : "1px solid color-mix(in srgb, var(--success) 20%, transparent)",
+        borderTop: statusSeparatorBorder(isError),
         background: "var(--bg-subtle)",
         padding: "8px 10px",
         display: "flex",

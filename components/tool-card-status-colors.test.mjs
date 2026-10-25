@@ -7,6 +7,7 @@ import { createJiti } from "jiti";
 // theme has to carry both, or `color-mix()` over an undefined token drops the
 // whole declaration and the card loses its border and background.
 const globals = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+const demoGlobals = readFileSync(new URL("../demo/app/globals.css", import.meta.url), "utf8");
 
 const jiti = createJiti(import.meta.url, { tsconfigPaths: true, jsx: { runtime: "automatic" } });
 const React = await jiti.import("react");
@@ -38,27 +39,38 @@ const BLOCK = {
   preview: null,
 };
 
-/** Every theme block in the stylesheet, as `selector { body }` pairs. */
-function themeBlocks() {
+/** Every theme block in a stylesheet, as `selector { body }` pairs. */
+function themeBlocks(source) {
   const blocks = [];
   const re = /((?::root|html(?:\[data-theme="[^"]+"\]|\.dark)|\[data-theme="[^"]+"\])(?:\s*,\s*(?::root|html(?:\[data-theme="[^"]+"\]|\.dark)|\[data-theme="[^"]+"\]))*\s*)\{([^}]*)\}/g;
-  for (const match of globals.matchAll(re)) blocks.push({ selector: match[1].trim(), body: match[2] });
+  for (const match of source.matchAll(re)) blocks.push({ selector: match[1].trim(), body: match[2] });
   return blocks;
 }
 
-test("every theme carries the success and error status tokens", () => {
-  // A palette block is one that sets the surface color; the `:root` and
-  // `html.dark` blocks elsewhere in the sheet set one-off properties.
-  const palettes = themeBlocks().filter(({ body }) => /--bg\s*:/.test(body));
-  assert.ok(palettes.length >= 13, `expected every palette, found ${palettes.length}`);
+/** The palette blocks of a stylesheet (those that set the surface color). */
+function palettes(source) {
+  return themeBlocks(source).filter(({ body }) => /--bg\s*:/.test(body));
+}
 
+function missingTokens(source) {
   const missing = [];
-  for (const { selector, body } of palettes) {
+  for (const { selector, body } of palettes(source)) {
     for (const token of ["--success", "--error"]) {
       if (!new RegExp(`${token}\\s*:`).test(body)) missing.push(`${selector} → ${token}`);
     }
   }
-  assert.deepEqual(missing, []);
+  return missing;
+}
+
+test("every theme carries the success and error status tokens", () => {
+  const appPalettes = palettes(globals);
+  assert.ok(appPalettes.length >= 13, `expected every app palette, found ${appPalettes.length}`);
+  assert.deepEqual(missingTokens(globals), []);
+
+  // The demo is its own project with its own stylesheet, so its palettes need
+  // the tokens copied too, or its tool cards lose their status chrome.
+  assert.ok(palettes(demoGlobals).length >= 5, "expected the demo's palettes");
+  assert.deepEqual(missingTokens(demoGlobals), []);
 });
 
 test("the questionnaire card draws its status chrome from the theme tokens", () => {

@@ -26,6 +26,7 @@ import { CodemodeCallList } from "./CodemodeToolView";
 import { AskUserQuestionView } from "./AskUserQuestionView";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { mcpToolLabel, prettyMcpResultText } from "@/lib/mcp-tool-display";
+import { statusCardBorder, statusResultBorder, statusSeparatorBorder } from "@/lib/status-colors";
 import { streamRateKey, streamRateStart, streamTokensPerSecond, type StreamRateStart } from "@/lib/stream-token-rate";
 import { getTranscriptNotices } from "@/lib/transcript-notices";
 import { TRANSCRIPT_NOTICE_WARNING_COLOR, transcriptNoticeText } from "@/components/TranscriptNotices";
@@ -1283,7 +1284,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
         borderRadius: 7,
         overflow: "hidden",
         fontSize: 12,
-        border: isError ? "1px solid color-mix(in srgb, var(--error) 45%, transparent)" : "1px solid color-mix(in srgb, var(--success) 25%, transparent)",
+        border: statusCardBorder(isError),
         background: isError ? "color-mix(in srgb, var(--error) 5%, transparent)" : "color-mix(in srgb, var(--success) 4%, transparent)",
       }}
     >
@@ -1352,7 +1353,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
             style={{
               padding: "6px 10px 8px",
               background: "var(--bg-subtle)",
-              borderTop: isError ? "1px solid color-mix(in srgb, var(--error) 25%, transparent)" : "1px solid color-mix(in srgb, var(--success) 20%, transparent)",
+              borderTop: statusSeparatorBorder(isError),
             }}
           >
             <ToolFieldRows fields={toolFields} />
@@ -1367,7 +1368,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
               lineHeight: 1.5,
               overflow: "auto",
               background: "var(--bg-subtle)",
-              borderTop: isError ? "1px solid color-mix(in srgb, var(--error) 25%, transparent)" : "1px solid color-mix(in srgb, var(--success) 20%, transparent)",
+              borderTop: statusSeparatorBorder(isError),
               whiteSpace: "pre-wrap",
               wordBreak: "break-all",
             }}
@@ -1788,7 +1789,7 @@ function ResultImages({ images, isError }: { images: ImageContent[]; isError: bo
         flexWrap: "wrap",
         padding: "10px",
         background: "var(--bg)",
-        borderTop: `1px solid ${isError ? "color-mix(in srgb, var(--error) 30%, transparent)" : "color-mix(in srgb, var(--success) 15%, transparent)"}`,
+        borderTop: statusResultBorder(isError),
       }}
     >
       {images.map((image, index) => {
@@ -1830,7 +1831,7 @@ function PairedResult({ text, isEmpty, isError }: {
   return (
     <div
       style={{
-        borderTop: `1px solid ${isError ? "color-mix(in srgb, var(--error) 30%, transparent)" : "color-mix(in srgb, var(--success) 15%, transparent)"}`,
+        borderTop: statusResultBorder(isError),
         background: isError ? "color-mix(in srgb, var(--error) 4%, transparent)" : "var(--bg-subtle)",
       }}
     >

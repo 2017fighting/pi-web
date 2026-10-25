@@ -14,6 +14,7 @@ import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, 
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
+import { statusCardBorder, statusResultBorder, statusSeparatorBorder } from "@/lib/status-colors";
 import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummary, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { AskUserQuestionView } from "./AskUserQuestionView";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
@@ -1181,8 +1182,8 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
         borderRadius: 7,
         overflow: "hidden",
         fontSize: 12,
-        border: isError ? "1px solid rgba(248,113,113,0.45)" : "1px solid rgba(34,197,94,0.25)",
-        background: isError ? "rgba(248,113,113,0.05)" : "rgba(34,197,94,0.04)",
+        border: statusCardBorder(isError),
+        background: isError ? "color-mix(in srgb, var(--error) 5%, transparent)" : "color-mix(in srgb, var(--success) 4%, transparent)",
       }}
     >
       {/* ── Tool call header ── */}
@@ -1204,7 +1205,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
             textAlign: "left",
           }}
         >
-          <span style={{ color: isError ? "#f87171" : "#16a34a", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>
+          <span style={{ color: isError ? "var(--error)" : "var(--success)", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>
             {block.toolName}
           </span>
           <span style={{ color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
@@ -1237,7 +1238,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
             style={{
               padding: "6px 10px 8px",
               background: "var(--bg-subtle)",
-              borderTop: isError ? "1px solid rgba(248,113,113,0.25)" : "1px solid rgba(34,197,94,0.2)",
+              borderTop: statusSeparatorBorder(isError),
             }}
           >
             <ToolFieldRows fields={toolFields} />
@@ -1252,7 +1253,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
               lineHeight: 1.5,
               overflow: "auto",
               background: "var(--bg-subtle)",
-              borderTop: isError ? "1px solid rgba(248,113,113,0.25)" : "1px solid rgba(34,197,94,0.2)",
+              borderTop: statusSeparatorBorder(isError),
               whiteSpace: "pre-wrap",
               wordBreak: "break-all",
             }}
@@ -1272,7 +1273,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
 
       {/* ── Expanded: applied-patch split diff ── */}
       {expanded && cardView === "patch" && patchFiles && (
-        <div style={{ borderTop: "1px solid rgba(34,197,94,0.15)", background: "var(--bg)" }}>
+        <div style={{ borderTop: "1px solid color-mix(in srgb, var(--success) 15%, transparent)", background: "var(--bg)" }}>
           <SplitFilesView files={patchFiles} />
         </div>
       )}
@@ -1312,7 +1313,7 @@ function PairedDiffResult({ diff }: {
   return (
     <div
       style={{
-        borderTop: "1px solid rgba(34,197,94,0.15)",
+        borderTop: "1px solid color-mix(in srgb, var(--success) 15%, transparent)",
         background: "var(--bg)",
       }}
     >
@@ -1487,16 +1488,16 @@ function SplitDiffHeader({ title, side }: { title: string; side: "left" | "right
 function SplitDiffCellView({ cell, side }: { cell: SplitDiffCell; side: "left" | "right" }) {
   const bg =
     cell.type === "added"
-      ? "rgba(34,197,94,0.12)"
+      ? "color-mix(in srgb, var(--success) 12%, transparent)"
       : cell.type === "removed"
-      ? "rgba(248,113,113,0.13)"
+      ? "color-mix(in srgb, var(--error) 13%, transparent)"
       : cell.type === "empty"
       ? "var(--bg-subtle)"
       : "transparent";
   const marker =
     cell.type === "added" ? "+" : cell.type === "removed" ? "-" : " ";
   const markerColor =
-    cell.type === "added" ? "#22c55e" : cell.type === "removed" ? "#f87171" : "var(--text-dim)";
+    cell.type === "added" ? "var(--success)" : cell.type === "removed" ? "var(--error)" : "var(--text-dim)";
 
   return (
     <div
@@ -1561,13 +1562,13 @@ function PatchTextView({ text }: { text: string }) {
           line.startsWith("-") && !line.startsWith("---") ? "removed" :
           "context";
         const bg =
-          kind === "added" ? "rgba(34,197,94,0.12)" :
-          kind === "removed" ? "rgba(248,113,113,0.13)" :
+          kind === "added" ? "color-mix(in srgb, var(--success) 12%, transparent)" :
+          kind === "removed" ? "color-mix(in srgb, var(--error) 13%, transparent)" :
           kind === "hunk" ? "rgba(96,165,250,0.12)" :
           "transparent";
         const color =
-          kind === "added" ? "#22c55e" :
-          kind === "removed" ? "#f87171" :
+          kind === "added" ? "var(--success)" :
+          kind === "removed" ? "var(--error)" :
           kind === "hunk" ? "var(--accent)" :
           "var(--text)";
 
@@ -1578,9 +1579,9 @@ function PatchTextView({ text }: { text: string }) {
               display: "flex",
               background: bg,
               borderLeft: kind === "added"
-                ? "3px solid #22c55e"
+                ? "3px solid var(--success)"
                 : kind === "removed"
-                ? "3px solid #f87171"
+                ? "3px solid var(--error)"
                 : kind === "hunk"
                 ? "3px solid var(--accent)"
                 : "3px solid transparent",
@@ -1667,7 +1668,7 @@ function ResultImages({ images, isError }: { images: ImageContent[]; isError: bo
         flexWrap: "wrap",
         padding: "10px",
         background: "var(--bg)",
-        borderTop: `1px solid ${isError ? "rgba(248,113,113,0.3)" : "rgba(34,197,94,0.15)"}`,
+        borderTop: statusResultBorder(isError),
       }}
     >
       {images.map((image, index) => {
@@ -1709,15 +1710,15 @@ function PairedResult({ text, isEmpty, isError }: {
   return (
     <div
       style={{
-        borderTop: `1px solid ${isError ? "rgba(248,113,113,0.3)" : "rgba(34,197,94,0.15)"}`,
-        background: isError ? "rgba(248,113,113,0.04)" : "var(--bg-subtle)",
+        borderTop: statusResultBorder(isError),
+        background: isError ? "color-mix(in srgb, var(--error) 4%, transparent)" : "var(--bg-subtle)",
       }}
     >
       <pre
         style={{
           margin: 0,
           padding: "8px 10px",
-          color: isError ? "#f87171" : (isEmpty ? "var(--text-dim)" : "var(--text-muted)"),
+          color: isError ? "var(--error)" : (isEmpty ? "var(--text-dim)" : "var(--text-muted)"),
           fontSize: "calc(12px + var(--chat-font-size-offset, 0px))",
           lineHeight: 1.5,
           overflow: "auto",

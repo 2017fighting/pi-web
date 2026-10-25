@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useI18n } from "@/hooks/useI18n";
+import { statusSeparatorBorder } from "@/lib/status-colors";
 import {
   codemodeTotalCost,
   formatCodemodeCost,
@@ -75,7 +76,7 @@ export function CodemodeCallList({ calls, omitted, isError }: {
   return (
     <div
       style={{
-        borderTop: isError ? "1px solid color-mix(in srgb, var(--error) 25%, transparent)" : "1px solid color-mix(in srgb, var(--success) 20%, transparent)",
+        borderTop: statusSeparatorBorder(isError),
         background: "var(--bg-subtle)",
         padding: "6px 10px",
         fontFamily: "var(--font-mono)",
