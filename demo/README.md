@@ -46,6 +46,7 @@ differ from their originals:
 | `components/ChatWindow.tsx`, `FileIcons.tsx`, `ProviderIcon.tsx` | Prefix static assets with the Pages base path |
 | `components/FileViewer.tsx`, `FileExplorer.tsx`, `MarkdownBody.tsx` | Load images, media and downloads from the static snapshot |
 | `components/AskUserQuestionView.tsx` | The transcript-notice warning color is inlined; the demo doesn't copy the transcript notice lines |
+| `components/MessageView.tsx` | The demo's copy predates the app's codemode card, turn durations and transcript notices; it opens a subagent session instead of a subagent tab |
 | `lib/subagent-extension.ts`, `lib/terminal-manager.ts` | Types only; the originals are server code |
 
 To pick up UI changes from the main project, copy the updated files over and

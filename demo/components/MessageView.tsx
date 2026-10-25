@@ -14,7 +14,7 @@ import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, 
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
-import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummary, parseAskUserQuestion } from "@/lib/ask-user-question-view";
+import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummary, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { AskUserQuestionView } from "./AskUserQuestionView";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
@@ -1105,6 +1105,28 @@ function isSubagentToolDetails(value: unknown): value is SubagentToolDetails {
   return details.kind === "pi-web-subagent" && typeof details.sessionId === "string";
 }
 
+/** A view of its own a tool card can show instead of its arguments. */
+export type ToolCardView = "write" | "patch" | "codemode" | "questionnaire";
+
+/**
+ * Which view of its own a tool call has, or null for the generic card (its
+ * arguments as rows, else as JSON). The one place the card decides, so a new
+ * view is one case here rather than one more clause in every condition that
+ * guards the generic body.
+ */
+export function toolCardViewOf(views: {
+  writtenFileText: string | null;
+  patchFiles: SplitDiffFile[] | null;
+  codemodeCode: string | null;
+  questionnaire: AskUserQuestionQuestion[] | null;
+}): ToolCardView | null {
+  if (views.writtenFileText !== null) return "write";
+  if (views.patchFiles !== null) return "patch";
+  if (views.codemodeCode !== null) return "codemode";
+  if (views.questionnaire !== null) return "questionnaire";
+  return null;
+}
+
 function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOpenSession }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; isStreaming?: boolean; isRunActive?: boolean; onOpenSession?: (sessionId: string) => void }) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(() => isToolCallExpanded(block.toolCallId));
@@ -1132,11 +1154,13 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   // The questionnaire the expanded card draws: each question with its ticks, the
   // text typed and the note.
   const questionBlocks = questionnaire === null ? null : askUserQuestionBlocks(questionnaire, result);
+  // The one predicate: which view of its own this card has, or null for the
+  // generic one (flat rows, else the JSON). The demo has no codemode view.
+  const cardView = toolCardViewOf({ writtenFileText, patchFiles, codemodeCode: null, questionnaire });
+
   // Flat arguments as rows instead of a JSON blob, unless the card has a view of
-  // its own (a write's file text, an applied patch, a questionnaire). See
-  // `lib/tool-fields.ts`.
-  const toolFields =
-    !isStreamingInput && writtenFileText === null && patchFiles === null && questionnaire === null ? toolFieldsOfInput(block.input) : null;
+  // its own. See `lib/tool-fields.ts`.
+  const toolFields = cardView === null && !isStreamingInput ? toolFieldsOfInput(block.input) : null;
   const patchLabel = isApplyPatchToolName(block.toolName)
     ? summarizeApplyPatchInput(block)
     : null;
@@ -1207,7 +1231,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
       </div>
 
       {/* ── Expanded: input args (only when no richer view exists) ── */}
-      {expanded && (isStreamingInput || !isEditTool) && !patchFiles && questionnaire === null && (
+      {expanded && cardView !== "patch" && cardView !== "questionnaire" && (isStreamingInput || !isEditTool) && (
         toolFields ? (
           <div
             style={{
@@ -1239,7 +1263,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
       )}
 
       {/* ── Expanded: the questionnaire an ask_user_question call carried ── */}
-      {expanded && questionBlocks && (
+      {expanded && cardView === "questionnaire" && questionBlocks && (
         <AskUserQuestionView blocks={questionBlocks} isError={isError} />
       )}
 
@@ -1247,21 +1271,21 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
       {resultImages.length > 0 && <ResultImages images={resultImages} isError={isError} />}
 
       {/* ── Expanded: applied-patch split diff ── */}
-      {expanded && patchFiles && (
+      {expanded && cardView === "patch" && patchFiles && (
         <div style={{ borderTop: "1px solid rgba(34,197,94,0.15)", background: "var(--bg)" }}>
           <SplitFilesView files={patchFiles} />
         </div>
       )}
 
       {/* ── Paired result — only shown when expanded ── */}
-      {expanded && result && patchFiles && isError && (
+      {expanded && result && cardView === "patch" && isError && (
         <PairedResult
           text={resultText ?? ""}
           isEmpty={resultIsEmpty}
           isError={isError}
         />
       )}
-      {expanded && result && !patchFiles && !hidesResult && (
+      {expanded && result && cardView !== "patch" && !hidesResult && (
         resultDiff ? (
           <PairedDiffResult
             diff={resultDiff}

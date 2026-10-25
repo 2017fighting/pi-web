@@ -42,6 +42,26 @@ test("a tutorial session carries a questionnaire round whose answers the card sh
   assert.ok(blocks.some((block) => block.selected.length > 0), "the card ticks the recorded answers");
 });
 
+test("the demo's tool card predicate decides a view the same way the app's does", async () => {
+  const demo = await demoJiti.import("@/components/MessageView");
+  const app = await jiti.import("./MessageView.tsx");
+  assert.equal(typeof demo.toolCardViewOf, "function", "the demo's MessageView exports the shared predicate");
+
+  const generic = { writtenFileText: null, patchFiles: null, codemodeCode: null, questionnaire: null };
+  const views = [
+    generic,
+    { ...generic, writtenFileText: "one\ntwo" },
+    { ...generic, patchFiles: [{ oldPath: "a.ts", newPath: "a.ts", rows: [] }] },
+    { ...generic, codemodeCode: "return 1" },
+    { ...generic, questionnaire: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }] }] },
+  ];
+  const expected = [null, "write", "patch", "codemode", "questionnaire"];
+  views.forEach((view, index) => {
+    assert.equal(demo.toolCardViewOf(view), expected[index]);
+    assert.equal(demo.toolCardViewOf(view), app.toolCardViewOf(view), "the demo's predicate must not drift from the app's");
+  });
+});
+
 test("the demo's chat view draws the questionnaire card for an ask_user_question call", async () => {
   const React = demoRequire("react");
   const { renderToStaticMarkup } = demoRequire("react-dom/server");
