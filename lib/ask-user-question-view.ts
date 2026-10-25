@@ -80,15 +80,28 @@ export function parseAskUserQuestion(call: { toolName: string; input: unknown; r
   return questions.length > 0 ? questions : null;
 }
 
-/** What one answer reads as: the labels a multi-select picked, and the text typed alongside them. */
-function answerLabel(answer: Record<string, unknown>): string | null {
-  const parts: string[] = [];
-  if (answer.kind === "multi" && Array.isArray(answer.selected)) {
-    for (const selected of answer.selected) {
-      if (typeof selected === "string" && selected) parts.push(selected);
-    }
+/** What one answer reads as: the labels it picked, and the text typed alongside them. */
+function readAnswer(answer: Record<string, unknown>): { labels: string[]; custom: string | null } {
+  if (answer.kind === "multi") {
+    const labels = Array.isArray(answer.selected)
+      ? answer.selected.filter((label): label is string => typeof label === "string" && label.length > 0)
+      : [];
+    return { labels, custom: typeof answer.answer === "string" && answer.answer ? answer.answer : null };
   }
-  if (typeof answer.answer === "string" && answer.answer) parts.push(answer.answer);
+  if (answer.kind === "custom") {
+    return { labels: [], custom: typeof answer.answer === "string" && answer.answer ? answer.answer : null };
+  }
+  if (answer.kind === "option" && typeof answer.answer === "string" && answer.answer) {
+    return { labels: [answer.answer], custom: null };
+  }
+  return { labels: [], custom: null };
+}
+
+/** What one answer reads as: the picked labels and the text typed alongside them. */
+function answerLabel(answer: Record<string, unknown>): string | null {
+  const { labels, custom } = readAnswer(answer);
+  const parts = [...labels];
+  if (custom) parts.push(custom);
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
@@ -163,22 +176,6 @@ export interface AskUserQuestionBlock {
   unanswered: boolean;
 }
 
-/** The labels a chosen answer names: a multi-select's `selected`, or a single option's `answer`. */
-function chosenLabels(answer: Record<string, unknown>): string[] {
-  if (answer.kind === "multi" && Array.isArray(answer.selected)) {
-    return answer.selected.filter((label): label is string => typeof label === "string" && label.length > 0);
-  }
-  if (answer.kind === "option" && typeof answer.answer === "string" && answer.answer) return [answer.answer];
-  return [];
-}
-
-/** The text the user typed: a `custom` answer, or a multi-select's typed answer alongside its ticks. */
-function customText(answer: Record<string, unknown>): string | null {
-  return (answer.kind === "custom" || answer.kind === "multi") && typeof answer.answer === "string" && answer.answer
-    ? answer.answer
-    : null;
-}
-
 /**
  * The questionnaire the expanded card draws: one block per question, each with
  * the labels to tick and the text and note to show. Answers are matched to
@@ -198,10 +195,11 @@ export function askUserQuestionBlocks(
     if (!isRecord(answer)) {
       return { question, selected: [], custom: null, note: null, unanswered: submitted };
     }
+    const { labels, custom } = readAnswer(answer);
     return {
       question,
-      selected: chosenLabels(answer),
-      custom: customText(answer),
+      selected: labels,
+      custom,
       note: typeof answer.notes === "string" && answer.notes ? answer.notes : null,
       unanswered: false,
     };

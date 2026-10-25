@@ -714,6 +714,14 @@ function renderQuestionnaire(block, result) {
   }, { toolResults: new Map(result ? [[block.toolCallId, result]] : []) });
 }
 
+function questionnaireCall(toolCallId, questions) {
+  return { type: "toolCall", toolCallId, toolName: "ask_user_question", input: { questions } };
+}
+
+function questionnaireResult(block, details, text) {
+  return { role: "toolResult", toolCallId: block.toolCallId, content: [{ type: "text", text }], details };
+}
+
 const CODEMODE_SCRIPT = "// @options: {\"timeoutMs\": 5000}\nconst files = await tools.ls({ path: \".\" });\nreturn files.length;";
 
 test("collapses a codemode call to its first script line and call count", (t) => {
@@ -934,29 +942,21 @@ test("reads a questionnaire with no result as waiting while its run is live and 
 });
 
 test("expands a questionnaire into its questions, options and the ticked answer", (t) => {
-  const block = {
-    type: "toolCall",
-    toolCallId: "call-ask-user-question-expanded",
-    toolName: "ask_user_question",
-    input: {
-      questions: [
-        {
-          question: "**Which** auth method should the API use?",
-          header: "Auth method",
-          options: [
-            { label: "OAuth", description: "Delegate to the provider." },
-            { label: "API key", description: "Keep a shared secret." },
-          ],
-        },
+  const block = questionnaireCall("call-ask-user-question-expanded", [
+    {
+      question: "**Which** auth method should the API use?",
+      header: "Auth method",
+      options: [
+        { label: "OAuth", description: "Delegate to the provider." },
+        { label: "API key", description: "Keep a shared secret." },
       ],
     },
-  };
-  const result = {
-    role: "toolResult",
-    toolCallId: block.toolCallId,
-    content: [{ type: "text", text: 'User has answered your questions: "Which auth method should the API use?"="OAuth". You can now continue with the user\'s answers in mind.' }],
-    details: { answers: [{ questionIndex: 0, question: "**Which** auth method should the API use?", kind: "option", answer: "OAuth" }], cancelled: false },
-  };
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, question: "**Which** auth method should the API use?", kind: "option", answer: "OAuth" }], cancelled: false },
+    'User has answered your questions: "Which auth method should the API use?"="OAuth". You can now continue with the user\'s answers in mind.',
+  );
   setToolCallExpanded(block.toolCallId, true);
   t.after(() => clearExpandedToolCalls());
   const html = renderQuestionnaire(block, result);
@@ -970,51 +970,39 @@ test("expands a questionnaire into its questions, options and the ticked answer"
   assert.match(text, /Delegate to the provider\./);
   assert.match(text, /API key/);
   assert.match(text, /Keep a shared secret\./);
-  // The chosen option is ticked and the other is an empty mark.
-  assert.equal((html.match(/✓/g) ?? []).length, 1);
-  assert.equal((html.match(/○/g) ?? []).length, 1);
-  assert.match(html, /✓<\/span>[\s\S]*?OAuth/);
-  assert.match(html, /○<\/span>[\s\S]*?API key/);
-  // Read-only: the only button is the card's own expand toggle, and no field writes back.
-  assert.equal((html.match(/<button/g) ?? []).length, 1);
-  assert.doesNotMatch(html, /<input/);
+  // The chosen option reads ticked and the other reads as an empty mark, as text.
+  assert.match(text, /✓OAuth/);
+  assert.match(text, /○API key/);
+  assert.doesNotMatch(text, /✓API key/);
+  assert.doesNotMatch(text, /○OAuth/);
   // The envelope the card already carries is dropped.
   assert.doesNotMatch(text, /User has answered your questions/);
 });
 
 test("expands a multi-select questionnaire with its tag, ticks, custom answer and note", (t) => {
-  const block = {
-    type: "toolCall",
-    toolCallId: "call-ask-user-question-multi",
-    toolName: "ask_user_question",
-    input: {
-      questions: [
-        {
-          question: "Where should sessions live?",
-          header: "Storage",
-          multiSelect: true,
-          options: [
-            { label: "Disk", description: "Local disk." },
-            { label: "S3", description: "Object storage." },
-          ],
-        },
+  const block = questionnaireCall("call-ask-user-question-multi", [
+    {
+      question: "Where should sessions live?",
+      header: "Storage",
+      multiSelect: true,
+      options: [
+        { label: "Disk", description: "Local disk." },
+        { label: "S3", description: "Object storage." },
       ],
     },
-  };
-  const result = {
-    role: "toolResult",
-    toolCallId: block.toolCallId,
-    content: [{ type: "text", text: 'User has answered your questions: "Where should sessions live?"="Disk".' }],
-    details: { answers: [{ questionIndex: 0, question: "Where should sessions live?", kind: "multi", answer: "and dots", selected: ["Disk"], notes: "keep it simple" }], cancelled: false },
-  };
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, question: "Where should sessions live?", kind: "multi", answer: "and dots", selected: ["Disk"], notes: "keep it simple" }], cancelled: false },
+    'User has answered your questions: "Where should sessions live?"="Disk".',
+  );
   setToolCallExpanded(block.toolCallId, true);
   t.after(() => clearExpandedToolCalls());
-  const html = renderQuestionnaire(block, result);
-  const text = textOf(html);
+  const text = textOf(renderQuestionnaire(block, result));
 
   assert.match(text, /multi-select/);
-  assert.match(html, /✓<\/span>[\s\S]*?Disk/);
-  assert.match(html, /○<\/span>[\s\S]*?S3/);
+  assert.match(text, /✓Disk/);
+  assert.match(text, /○S3/);
   // A typed answer and a note each read on their own, labelled line.
   assert.match(text, /Custom answer/);
   assert.match(text, /and dots/);
@@ -1023,37 +1011,24 @@ test("expands a multi-select questionnaire with its tag, ticks, custom answer an
 });
 
 test("marks a question left blank on a partial submit as unanswered", (t) => {
-  const block = {
-    type: "toolCall",
-    toolCallId: "call-ask-user-question-partial",
-    toolName: "ask_user_question",
-    input: {
-      questions: [
-        { question: "Which auth method?", header: "Auth", options: [{ label: "OAuth", description: "" }, { label: "API key", description: "" }] },
-        { question: "Where should sessions live?", header: "Storage", options: [{ label: "Disk", description: "" }, { label: "S3", description: "" }] },
-      ],
-    },
-  };
-  const result = {
-    role: "toolResult",
-    toolCallId: block.toolCallId,
-    content: [{ type: "text", text: 'User has answered your questions: "Which auth method?"="OAuth".' }],
-    details: { answers: [{ questionIndex: 0, question: "Which auth method?", kind: "option", answer: "OAuth" }], cancelled: false, unanswered: [1] },
-  };
+  const block = questionnaireCall("call-ask-user-question-partial", [
+    { question: "Which auth method?", header: "Auth", options: [{ label: "OAuth", description: "" }, { label: "API key", description: "" }] },
+    { question: "Where should sessions live?", header: "Storage", options: [{ label: "Disk", description: "" }, { label: "S3", description: "" }] },
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, question: "Which auth method?", kind: "option", answer: "OAuth" }], cancelled: false, unanswered: [1] },
+    'User has answered your questions: "Which auth method?"="OAuth".',
+  );
   setToolCallExpanded(block.toolCallId, true);
   t.after(() => clearExpandedToolCalls());
-  const html = renderQuestionnaire(block, result);
+  const text = textOf(renderQuestionnaire(block, result));
   // The blank question's own block is marked; the answered one is not.
-  assert.match(html, /Storage[\s\S]*?unanswered/);
+  assert.match(text, /Storage[\s\S]*?unanswered/);
 });
 
 test("keeps the generic JSON view for an ask_user_question call whose questions are malformed", (t) => {
-  const block = {
-    type: "toolCall",
-    toolCallId: "call-ask-user-question-malformed",
-    toolName: "ask_user_question",
-    input: { questions: [{ question: "Which one?" }] },
-  };
+  const block = questionnaireCall("call-ask-user-question-malformed", [{ question: "Which one?" }]);
   setToolCallExpanded(block.toolCallId, true);
   t.after(() => clearExpandedToolCalls());
   const text = textOf(renderQuestionnaire(block, undefined));

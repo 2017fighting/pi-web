@@ -1,6 +1,7 @@
 "use client";
 
 import { MarkdownBody } from "./MarkdownBody";
+import { TRANSCRIPT_NOTICE_WARNING_COLOR } from "./TranscriptNotices";
 import { useI18n } from "@/hooks/useI18n";
 import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
 
@@ -31,9 +32,18 @@ const TAG_STYLE: React.CSSProperties = {
 
 const LINE_LABEL_STYLE: React.CSSProperties = {
   ...TAG_STYLE,
-  flexShrink: 0,
   alignSelf: "flex-start",
 };
+
+/** The text typed or the note, each on its own line under the options. */
+function AnswerLine({ label, text }: { label: string; text: string }) {
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "baseline", minWidth: 0 }}>
+      <span style={LINE_LABEL_STYLE}>{label}</span>
+      <span style={{ color: "var(--text-muted)", overflowWrap: "anywhere", minWidth: 0 }}>{text}</span>
+    </div>
+  );
+}
 
 function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
   const { t } = useI18n();
@@ -45,7 +55,7 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
           {question.header && <span style={CHIP_STYLE}>{question.header}</span>}
           {question.multiSelect && <span style={TAG_STYLE}>{t("askUserQuestion.multiSelect")}</span>}
           {block.unanswered && (
-            <span style={{ ...TAG_STYLE, border: "1px solid rgba(217,119,6,0.5)", color: "#d97706" }}>
+            <span style={{ ...TAG_STYLE, border: `1px solid ${TRANSCRIPT_NOTICE_WARNING_COLOR}`, color: TRANSCRIPT_NOTICE_WARNING_COLOR }}>
               {t("askUserQuestion.unanswered")}
             </span>
           )}
@@ -73,18 +83,8 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
           );
         })}
       </ul>
-      {block.custom !== null && (
-        <div style={{ display: "flex", gap: 6, alignItems: "baseline", minWidth: 0 }}>
-          <span style={LINE_LABEL_STYLE}>{t("askUserQuestion.custom")}</span>
-          <span style={{ color: "var(--text-muted)", overflowWrap: "anywhere", minWidth: 0 }}>{block.custom}</span>
-        </div>
-      )}
-      {block.note !== null && (
-        <div style={{ display: "flex", gap: 6, alignItems: "baseline", minWidth: 0 }}>
-          <span style={LINE_LABEL_STYLE}>{t("askUserQuestion.note")}</span>
-          <span style={{ color: "var(--text-muted)", overflowWrap: "anywhere", minWidth: 0 }}>{block.note}</span>
-        </div>
-      )}
+      {block.custom !== null && <AnswerLine label={t("askUserQuestion.custom")} text={block.custom} />}
+      {block.note !== null && <AnswerLine label={t("askUserQuestion.note")} text={block.note} />}
     </div>
   );
 }
