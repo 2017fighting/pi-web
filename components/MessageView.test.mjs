@@ -350,7 +350,7 @@ test("renders subagents as standard tool calls with only an extra side-panel but
     onOpenSubagent() {},
   });
 
-  assert.match(html, /border:1px solid rgba\(34,197,94,0\.25\)/);
+  assert.match(html, /border:1px solid color-mix\(in srgb, var\(--success\) 25%, transparent\)/);
   assert.match(html, />Agent</);
   assert.match(html, />Explore</);
   assert.match(html, /aria-label="View sub-agent work in side panel"/);
@@ -597,9 +597,9 @@ test("marks apply_patch returned failures as errors even when isError is unset",
     content: [block],
   }, { toolResults: new Map([[block.toolCallId, failed]]) });
 
-  assert.match(html, /border:1px solid rgba\(248,113,113,0\.45\)/);
+  assert.match(html, /border:1px solid color-mix\(in srgb, var\(--error\) 45%, transparent\)/);
   assert.match(html, />apply_patch</);
-  assert.doesNotMatch(html, /border:1px solid rgba\(34,197,94,0\.25\)/);
+  assert.doesNotMatch(html, /border:1px solid color-mix\(in srgb, var\(--success\) 25%, transparent\)/);
 });
 
 test("collapses a displayed custom message from its header alone", () => {
