@@ -17,6 +17,11 @@ function cardKeys(messages) {
   return Object.keys(messages).filter((key) => key.startsWith("askUserQuestion.")).sort();
 }
 
+/** The `{placeholders}` a message interpolates, sorted. */
+function placeholders(message) {
+  return [...message.matchAll(/\{([\w.-]+)\}/g)].map((match) => match[1]).sort();
+}
+
 test("a tutorial session carries a questionnaire round whose answers the card shows", async () => {
   const { SESSION_SCRIPTS } = await jiti.import("../demo/mock/sessions/scripts.ts");
   const { parseAskUserQuestion, askUserQuestionBlocks } = await jiti.import("../lib/ask-user-question-view.ts");
@@ -73,10 +78,11 @@ test("the demo's chat view draws the questionnaire card for an ask_user_question
       ],
     },
   };
-  const render = (block, toolResults) => textOf(renderToStaticMarkup(
+  const render = (block, toolResults, props = {}) => textOf(renderToStaticMarkup(
     React.createElement(I18nProvider, null, React.createElement(MessageView, {
       message: { role: "assistant", provider: "openai-codex", model: "gpt-5.5", content: [block] },
       toolResults,
+      ...props,
     })),
   ));
 
@@ -105,6 +111,14 @@ test("the demo's chat view draws the questionnaire card for an ask_user_question
     const generic = render(read, new Map());
     assert.match(generic, /README\.md/);
     assert.doesNotMatch(generic, /multi-select/);
+
+    // No result yet: waiting while the run that made the call is live, unfinished
+    // once it has ended, exactly as the app reads it.
+    setToolCallExpanded(call.toolCallId, false);
+    const pending = new Map();
+    assert.match(render(call, pending), /Focus · 2 questions · unfinished/);
+    assert.match(render(call, pending, { isStreaming: true }), /Focus · 2 questions · waiting for an answer/);
+    assert.match(render(call, pending, { isRunActive: true }), /Focus · 2 questions · waiting for an answer/);
   } finally {
     clearExpandedToolCalls();
   }
@@ -125,5 +139,12 @@ test("the demo's locale tables carry the questionnaire card's keys, like the app
   assert.ok(expected.length > 0, "the app's English table must carry the card's keys");
   for (const [id, locale] of [["en", enLocale], ["zh-CN", zhCNLocale], ["zh-TW", zhTWLocale]]) {
     assert.deepEqual(cardKeys(locale.messages), expected, `${id} must carry the card's keys`);
+    for (const key of expected) {
+      assert.deepEqual(
+        placeholders(locale.messages[key]),
+        placeholders(appEn.messages[key]),
+        `${id}.${key} placeholders must match the app's`,
+      );
+    }
   }
 });
