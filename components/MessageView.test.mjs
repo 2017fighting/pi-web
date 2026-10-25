@@ -979,6 +979,76 @@ test("expands a questionnaire into its questions, options and the ticked answer"
   assert.doesNotMatch(text, /User has answered your questions/);
 });
 
+test("shows the chosen option's preview as Markdown under it, and keeps the others hidden", (t) => {
+  const block = questionnaireCall("call-ask-user-question-preview", [
+    {
+      question: "Which auth method should the API use?",
+      header: "Auth method",
+      options: [
+        { label: "OAuth", description: "Delegate to the provider.", preview: "```http\nGET /oauth/authorize\n```" },
+        { label: "API key", description: "Keep a shared secret.", preview: "```http\nX-API-Key: shared-secret\n```" },
+      ],
+    },
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, question: "Which auth method should the API use?", kind: "option", answer: "OAuth" }], cancelled: false },
+    'User has answered your questions: "Which auth method should the API use?"="OAuth".',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const html = renderQuestionnaire(block, result);
+  const text = textOf(html);
+
+  // The chosen option's preview renders as Markdown, inside a block of its own that
+  // hangs under the option it belongs to.
+  assert.match(html, /class="markdown-body markdown-questionnaire-preview"/);
+  assert.match(text, /GET \/oauth\/authorize/);
+  assert.ok(text.indexOf("OAuth") < text.indexOf("GET /oauth/authorize"));
+  // The option that was not chosen keeps its preview hidden.
+  assert.doesNotMatch(text, /X-API-Key/);
+});
+
+test("shows no preview for a multi-select or a typed answer", (t) => {
+  const multi = questionnaireCall("call-ask-user-question-preview-multi", [
+    {
+      question: "Where should sessions live?",
+      header: "Storage",
+      multiSelect: true,
+      options: [
+        { label: "Disk", description: "Local disk.", preview: "path: /var/sessions" },
+        { label: "S3", description: "Object storage.", preview: "bucket: s3://sessions" },
+      ],
+    },
+  ]);
+  setToolCallExpanded(multi.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const multiHtml = renderQuestionnaire(multi, questionnaireResult(
+    multi,
+    { answers: [{ questionIndex: 0, question: "Where should sessions live?", kind: "multi", answer: null, selected: ["Disk"] }], cancelled: false },
+    'User has answered your questions: "Where should sessions live?"="Disk".',
+  ));
+  assert.doesNotMatch(textOf(multiHtml), /path: \/var\/sessions|bucket: s3/);
+
+  const custom = questionnaireCall("call-ask-user-question-preview-custom", [
+    {
+      question: "Which auth method should the API use?",
+      header: "Auth method",
+      options: [
+        { label: "OAuth", description: "Delegate to the provider.", preview: "```http\nGET /oauth/authorize\n```" },
+        { label: "API key", description: "Keep a shared secret." },
+      ],
+    },
+  ]);
+  setToolCallExpanded(custom.toolCallId, true);
+  const customHtml = renderQuestionnaire(custom, questionnaireResult(
+    custom,
+    { answers: [{ questionIndex: 0, question: "Which auth method should the API use?", kind: "custom", answer: "Something else" }], cancelled: false },
+    "User has answered your questions: \"Which auth method should the API use?\"=\"Something else\".",
+  ));
+  assert.doesNotMatch(textOf(customHtml), /GET \/oauth\/authorize/);
+});
+
 test("expands a multi-select questionnaire with its tag, ticks, custom answer and note", (t) => {
   const block = questionnaireCall("call-ask-user-question-multi", [
     {

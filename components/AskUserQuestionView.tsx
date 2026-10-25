@@ -7,9 +7,9 @@ import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
 
 // The expanded `ask_user_question` card: the questionnaire as a read-only record.
 // Each question is one block — its header chip, its Markdown text, and its options
-// with the chosen ones ticked — followed by a typed answer and a note on their own
-// lines. Nothing here is clickable: the call is over, and a click would fabricate
-// an answer that never happened.
+// with the chosen ones ticked, the chosen option's preview under it — followed by a
+// typed answer and a note on their own lines. Nothing here is clickable: the call is
+// over, and a click would fabricate an answer that never happened.
 
 const CHIP_STYLE: React.CSSProperties = {
   padding: "1px 6px",
@@ -77,6 +77,9 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
                 <span style={{ color: "var(--text-muted)", fontWeight: chosen ? 600 : 400 }}>{option.label}</span>
                 {option.description && (
                   <span style={{ color: "var(--text-dim)", overflowWrap: "anywhere" }}>{option.description}</span>
+                )}
+                {chosen && block.preview !== null && (
+                  <MarkdownBody className="markdown-questionnaire-preview">{block.preview}</MarkdownBody>
                 )}
               </span>
             </li>
