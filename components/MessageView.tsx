@@ -14,7 +14,7 @@ import { formatTurnDuration } from "@/lib/turn-duration";
 import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, type SplitDiffFile, type SplitDiffGap, type UnifiedDiffLine } from "@/lib/patch";
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
-import { askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummary, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
+import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummary, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
@@ -23,6 +23,7 @@ import { skillExpansionToCommand } from "@/lib/slash-display";
 import type { SubagentToolDetails } from "@/lib/subagent-extension";
 import { CODEMODE_TOOL_NAME, codemodeCalls, codemodeScript, codemodeScriptPreview, stripCodemodeHeader } from "@/lib/codemode-view";
 import { CodemodeCallList } from "./CodemodeToolView";
+import { AskUserQuestionView } from "./AskUserQuestionView";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { mcpToolLabel, prettyMcpResultText } from "@/lib/mcp-tool-display";
 import { streamRateKey, streamRateStart, streamTokensPerSecond, type StreamRateStart } from "@/lib/stream-token-rate";
@@ -1241,6 +1242,9 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   // would print the same answer twice. Guarded by the card's own view: another
   // tool's result may carry an `answers` list of its own.
   const hidesResult = questionnaire !== null && askUserQuestionHidesResult(result);
+  // The questionnaire the expanded card draws: each question with its ticks, the
+  // text typed and the note. Built only when the card has the questionnaire view.
+  const questionBlocks = questionnaire === null ? null : askUserQuestionBlocks(questionnaire, result);
   // The one predicate: which view of its own this card has, or null for the
   // generic one (flat rows, else the JSON).
   const cardView = toolCardViewOf({ writtenFileText, patchFiles, codemodeCode, questionnaire });
@@ -1342,7 +1346,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
       </div>
 
       {/* ── Expanded: input args (only when no richer view exists); a codemode script in place of its JSON ── */}
-      {expanded && cardView !== "patch" && (isStreamingInput || !isEditTool) && (
+      {expanded && cardView !== "patch" && cardView !== "questionnaire" && (isStreamingInput || !isEditTool) && (
         toolFields ? (
           <div
             style={{
@@ -1376,6 +1380,11 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
       {/* ── Expanded: the calls a codemode script made ── */}
       {expanded && codemode && (
         <CodemodeCallList calls={codemode.calls} omitted={codemode.omitted} isError={isError} />
+      )}
+
+      {/* ── Expanded: the questionnaire an ask_user_question call carried ── */}
+      {expanded && cardView === "questionnaire" && questionBlocks && (
+        <AskUserQuestionView blocks={questionBlocks} isError={isError} />
       )}
 
       {/* ── Result images — always visible, independent of the collapsed details ── */}

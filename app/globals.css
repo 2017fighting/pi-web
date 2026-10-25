@@ -1342,6 +1342,20 @@ pre, code {
   margin: 4px 0;
 }
 
+.markdown-questionnaire-question {
+  line-height: 1.4;
+}
+.markdown-questionnaire-question p { margin: 0 0 4px; }
+.markdown-questionnaire-question p:last-child { margin-bottom: 0; }
+.markdown-questionnaire-question ul,
+.markdown-questionnaire-question ol {
+  margin: 2px 0 4px;
+}
+.markdown-questionnaire-question .markdown-table-frame,
+.markdown-questionnaire-question .markdown-code-block {
+  margin: 4px 0;
+}
+
 .markdown-compaction-message {
   line-height: 1.5;
 }

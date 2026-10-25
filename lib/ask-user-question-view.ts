@@ -14,6 +14,8 @@ export const ASK_USER_QUESTION_TOOL_NAME = "ask_user_question";
 export interface AskUserQuestionOption {
   /** The choice's display text, and what a result's answer names. */
   label: string;
+  /** What the choice means or trades off; empty when the call carried none. */
+  description: string;
 }
 
 export interface AskUserQuestionQuestion {
@@ -22,6 +24,8 @@ export interface AskUserQuestionQuestion {
   /** The short chip shown beside the question; empty when the call carried none. */
   header: string;
   options: AskUserQuestionOption[];
+  /** Whether more than one option may be chosen. */
+  multiSelect: boolean;
 }
 
 /** The i18n translate function shape this module needs. */
@@ -47,9 +51,14 @@ function questionOf(value: unknown): AskUserQuestionQuestion | null {
   const options: AskUserQuestionOption[] = [];
   for (const option of value.options) {
     if (!isRecord(option) || typeof option.label !== "string") return null;
-    options.push({ label: option.label });
+    options.push({ label: option.label, description: typeof option.description === "string" ? option.description : "" });
   }
-  return { question: value.question, header: typeof value.header === "string" ? value.header : "", options };
+  return {
+    question: value.question,
+    header: typeof value.header === "string" ? value.header : "",
+    options,
+    multiSelect: value.multiSelect === true,
+  };
 }
 
 /**
@@ -136,6 +145,68 @@ const STATE_KEY = {
   waiting: "askUserQuestion.waiting",
   unfinished: "askUserQuestion.unfinished",
 } as const;
+
+/**
+ * One question paired with what the result recorded for it, as the expanded
+ * card draws it: the option labels to tick, the text typed in place of or
+ * alongside them, the note, and whether the question was left blank.
+ */
+export interface AskUserQuestionBlock {
+  question: AskUserQuestionQuestion;
+  /** Labels to tick, in the question's own option order. */
+  selected: string[];
+  /** Text the user typed, shown on its own line; null when none. */
+  custom: string | null;
+  /** The note the user attached to this question; null when none. */
+  note: string | null;
+  /** A non-cancelled result came back with nothing for this question. */
+  unanswered: boolean;
+}
+
+/** The labels a chosen answer names: a multi-select's `selected`, or a single option's `answer`. */
+function chosenLabels(answer: Record<string, unknown>): string[] {
+  if (answer.kind === "multi" && Array.isArray(answer.selected)) {
+    return answer.selected.filter((label): label is string => typeof label === "string" && label.length > 0);
+  }
+  if (answer.kind === "option" && typeof answer.answer === "string" && answer.answer) return [answer.answer];
+  return [];
+}
+
+/** The text the user typed: a `custom` answer, or a multi-select's typed answer alongside its ticks. */
+function customText(answer: Record<string, unknown>): string | null {
+  return (answer.kind === "custom" || answer.kind === "multi") && typeof answer.answer === "string" && answer.answer
+    ? answer.answer
+    : null;
+}
+
+/**
+ * The questionnaire the expanded card draws: one block per question, each with
+ * the labels to tick and the text and note to show. Answers are matched to
+ * questions by `questionIndex`, and a question with no answer reads `unanswered`
+ * only on a non-cancelled result, so a partial submit is legible while a decline
+ * is not dressed up as one.
+ */
+export function askUserQuestionBlocks(
+  questions: readonly AskUserQuestionQuestion[],
+  result: { details?: unknown } | undefined,
+): AskUserQuestionBlock[] {
+  const details = result?.details;
+  const answers = isRecord(details) && Array.isArray(details.answers) ? details.answers : [];
+  const submitted = isRecord(details) && details.cancelled !== true;
+  return questions.map((question, index) => {
+    const answer = answers.find((entry) => isRecord(entry) && entry.questionIndex === index);
+    if (!isRecord(answer)) {
+      return { question, selected: [], custom: null, note: null, unanswered: submitted };
+    }
+    return {
+      question,
+      selected: chosenLabels(answer),
+      custom: customText(answer),
+      note: typeof answer.notes === "string" && answer.notes ? answer.notes : null,
+      unanswered: false,
+    };
+  });
+}
 
 /**
  * The collapsed card's one line: the first question's header chip, how many
