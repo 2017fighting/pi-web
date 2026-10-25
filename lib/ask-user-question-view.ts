@@ -103,12 +103,22 @@ function readAnswer(answer: Record<string, unknown>): { labels: string[]; custom
   return { labels: [], custom: null };
 }
 
-/** What one answer reads as: the picked labels and the text typed alongside them. */
+/** The picked labels and the text typed alongside them, as one line. */
 function answerLabel(answer: Record<string, unknown>): string | null {
   const { labels, custom } = readAnswer(answer);
   const parts = [...labels];
   if (custom) parts.push(custom);
   return parts.length > 0 ? parts.join(", ") : null;
+}
+
+/**
+ * Whether the result is a dismissal — the user closed the questionnaire without
+ * answering. A cancelled result that carries an `error` is not one: a host that
+ * cannot render the questionnaire answers with `cancelled` and an `error`, and
+ * the user never saw the questions.
+ */
+function isDeclinedResult(details: unknown): boolean {
+  return isRecord(details) && details.cancelled === true && details.error === undefined;
 }
 
 /**
@@ -131,10 +141,9 @@ export function askUserQuestionState(
 
   const details = result.details;
   // A dismissal is a dismissal whatever else the result carries — but an error is
-  // not one: a host that cannot render the questionnaire answers with `cancelled`
-  // and an `error`, and the user never saw the questions. That result falls
-  // through to `answered` with no label, which reads `unanswered`.
-  if (isRecord(details) && details.cancelled === true && details.error === undefined) return { kind: "declined" };
+  // not one, and falls through to `answered` with no label, which reads
+  // `unanswered` (`isDeclinedResult`).
+  if (isDeclinedResult(details)) return { kind: "declined" };
 
   const first = isRecord(details) && Array.isArray(details.answers)
     ? details.answers.find((answer) => isRecord(answer) && answer.questionIndex === 0)
@@ -209,7 +218,10 @@ export function askUserQuestionBlocks(
 ): AskUserQuestionBlock[] {
   const details = result?.details;
   const answers = isRecord(details) && Array.isArray(details.answers) ? details.answers : [];
-  const submitted = isRecord(details) && details.cancelled !== true;
+  // A dismissal leaves every question unticked without calling it unanswered; an
+  // error is not a dismissal, so its blank questions read `unanswered` just as
+  // the collapsed row does.
+  const submitted = isRecord(details) && !isDeclinedResult(details);
   return questions.map((question, index) => {
     const answer = answers.find((entry) => isRecord(entry) && entry.questionIndex === index);
     if (!isRecord(answer)) {

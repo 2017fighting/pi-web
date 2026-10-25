@@ -920,7 +920,12 @@ test("drops a questionnaire's envelope but keeps an error result's text", () => 
       content: [{ type: "text", text: "Error: UI not available (running in non-interactive mode)" }],
       details: { answers: [], cancelled: true, error: "no_ui" },
     };
-    assert.match(textOf(renderMessage(message, { toolResults: new Map([[block.toolCallId, error]]) })), /UI not available/);
+    const errorText = textOf(renderMessage(message, { toolResults: new Map([[block.toolCallId, error]]) }));
+    assert.match(errorText, /UI not available/);
+    // An error is not a decline, so the row and the expanded body agree: the
+    // question was shown and left unanswered.
+    assert.match(errorText, /Pick · 1 question · unanswered/);
+    assert.match(errorText, /PickunansweredWhich one\?/);
   } finally {
     clearExpandedToolCalls();
   }
