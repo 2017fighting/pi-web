@@ -208,9 +208,9 @@ function chosenPreview(label: string | undefined, question: AskUserQuestionQuest
  * The questionnaire the expanded card draws: one block per question, each with
  * the labels to tick and the text and note to show. Answers are matched to
  * questions by `questionIndex`, and a question with no answer reads `unanswered`
- * only on a non-cancelled result, so a partial submit is legible while a decline
- * is not dressed up as one. A block also carries the chosen option's preview, so
- * the card can show the artifact that option offered.
+ * unless the result is a dismissal, so a partial submit is legible while a
+ * decline is not dressed up as one. A block also carries the chosen option's
+ * preview, so the card can show the artifact that option offered.
  */
 export function askUserQuestionBlocks(
   questions: readonly AskUserQuestionQuestion[],
