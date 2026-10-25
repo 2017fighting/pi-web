@@ -6,7 +6,10 @@ import { createJiti } from "jiti";
 const jiti = createJiti(import.meta.url, { tsconfigPaths: true, jsx: { runtime: "automatic" } });
 // The demo is its own Next.js project, so its components render with the copy of
 // React in `demo/node_modules`; rendering them with the root's copy would leave
-// two React instances and `useState` undefined.
+// two React instances and `useState` undefined. A jiti based inside `demo/` also
+// resolves the demo's own `@/` aliases, so `@/hooks/useI18n` is the same module
+// the demo's `MessageView` imports, as `components/test-imports.test.mjs` asks.
+const demoJiti = createJiti(new URL("../demo/package.json", import.meta.url).pathname, { tsconfigPaths: true, jsx: { runtime: "automatic" } });
 const demoRequire = createRequire(new URL("../demo/package.json", import.meta.url));
 
 /** The questionnaire card's keys, which the demo's locale tables carry by hand. */
@@ -37,9 +40,9 @@ test("a tutorial session carries a questionnaire round whose answers the card sh
 test("the demo's chat view draws the questionnaire card for an ask_user_question call", async () => {
   const React = demoRequire("react");
   const { renderToStaticMarkup } = demoRequire("react-dom/server");
-  const { MessageView } = await jiti.import("../demo/components/MessageView.tsx");
-  const { I18nProvider } = await jiti.import("../demo/hooks/useI18n.tsx");
-  const { setToolCallExpanded, clearExpandedToolCalls } = await jiti.import("../demo/lib/tool-call-expansion.ts");
+  const { MessageView } = await demoJiti.import("@/components/MessageView");
+  const { I18nProvider } = await demoJiti.import("@/hooks/useI18n");
+  const { setToolCallExpanded, clearExpandedToolCalls } = await demoJiti.import("@/lib/tool-call-expansion");
 
   const questions = [
     {
