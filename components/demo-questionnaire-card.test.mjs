@@ -12,6 +12,23 @@ const jiti = createJiti(import.meta.url, { tsconfigPaths: true, jsx: { runtime: 
 const demoJiti = createJiti(new URL("../demo/package.json", import.meta.url).pathname, { tsconfigPaths: true, jsx: { runtime: "automatic" } });
 const demoRequire = createRequire(new URL("../demo/package.json", import.meta.url));
 
+const React = demoRequire("react");
+const { renderToStaticMarkup } = demoRequire("react-dom/server");
+const { MessageView } = await demoJiti.import("@/components/MessageView");
+const { I18nProvider } = await demoJiti.import("@/hooks/useI18n");
+const { setToolCallExpanded, clearExpandedToolCalls } = await demoJiti.import("@/lib/tool-call-expansion");
+
+/** One assistant tool call, drawn by the demo's MessageView. */
+function renderToolCall(block, toolResults, props = {}) {
+  return renderToStaticMarkup(
+    React.createElement(I18nProvider, null, React.createElement(MessageView, {
+      message: { role: "assistant", provider: "openai-codex", model: "gpt-5.5", content: [block] },
+      toolResults,
+      ...props,
+    })),
+  );
+}
+
 /** The questionnaire card's keys, which the demo's locale tables carry by hand. */
 function cardKeys(messages) {
   return Object.keys(messages).filter((key) => key.startsWith("askUserQuestion.")).sort();
@@ -42,33 +59,37 @@ test("a tutorial session carries a questionnaire round whose answers the card sh
   assert.ok(blocks.some((block) => block.selected.length > 0), "the card ticks the recorded answers");
 });
 
-test("the demo's tool card predicate decides a view the same way the app's does", async () => {
-  const demo = await demoJiti.import("@/components/MessageView");
-  const app = await jiti.import("./MessageView.tsx");
-  assert.equal(typeof demo.toolCardViewOf, "function", "the demo's MessageView exports the shared predicate");
+test("the demo's chat view draws a tool card's own view through the shared predicate", () => {
+  const write = { type: "toolCall", toolCallId: "call-demo-write", toolName: "write", input: { path: "notes.txt", content: "hello from the demo" } };
+  const patch = { type: "toolCall", toolCallId: "call-demo-patch", toolName: "apply_patch", input: { input: "*** Begin Patch\n*** Update File: src/a.ts\n@@\n-old\n+new\n*** End Patch" } };
+  const read = { type: "toolCall", toolCallId: "call-demo-read-rows", toolName: "read", input: { path: "README.md" } };
 
-  const generic = { writtenFileText: null, patchFiles: null, codemodeCode: null, questionnaire: null };
-  const views = [
-    generic,
-    { ...generic, writtenFileText: "one\ntwo" },
-    { ...generic, patchFiles: [{ oldPath: "a.ts", newPath: "a.ts", rows: [] }] },
-    { ...generic, codemodeCode: "return 1" },
-    { ...generic, questionnaire: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }] }] },
-  ];
-  const expected = [null, "write", "patch", "codemode", "questionnaire"];
-  views.forEach((view, index) => {
-    assert.equal(demo.toolCardViewOf(view), expected[index]);
-    assert.equal(demo.toolCardViewOf(view), app.toolCardViewOf(view), "the demo's predicate must not drift from the app's");
-  });
+  clearExpandedToolCalls();
+  try {
+    for (const call of [write, patch, read]) setToolCallExpanded(call.toolCallId, true);
+
+    // A write shows its file text in place of its argument JSON.
+    const written = renderToolCall(write, new Map());
+    assert.match(written, /hello from the demo/);
+    assert.doesNotMatch(textOf(written), /"content"/);
+
+    // An applied patch shows its split diff in place of its argument JSON.
+    const patched = renderToolCall(patch, new Map());
+    assert.match(patched, />old</);
+    assert.match(patched, />new</);
+    assert.doesNotMatch(textOf(patched), /"input"/);
+
+    // Anything else keeps the generic card: its flat arguments as rows.
+    const generic = renderToolCall(read, new Map());
+    assert.match(generic, /<table/);
+    assert.match(generic, />path<\/td>/);
+    assert.match(textOf(generic), /README\.md/);
+  } finally {
+    clearExpandedToolCalls();
+  }
 });
 
 test("the demo's chat view draws the questionnaire card for an ask_user_question call", async () => {
-  const React = demoRequire("react");
-  const { renderToStaticMarkup } = demoRequire("react-dom/server");
-  const { MessageView } = await demoJiti.import("@/components/MessageView");
-  const { I18nProvider } = await demoJiti.import("@/hooks/useI18n");
-  const { setToolCallExpanded, clearExpandedToolCalls } = await demoJiti.import("@/lib/tool-call-expansion");
-
   const questions = [
     {
       question: "Which part should I go deeper on next?",
@@ -98,13 +119,7 @@ test("the demo's chat view draws the questionnaire card for an ask_user_question
       ],
     },
   };
-  const render = (block, toolResults, props = {}) => textOf(renderToStaticMarkup(
-    React.createElement(I18nProvider, null, React.createElement(MessageView, {
-      message: { role: "assistant", provider: "openai-codex", model: "gpt-5.5", content: [block] },
-      toolResults,
-      ...props,
-    })),
-  ));
+  const render = (block, toolResults, props = {}) => textOf(renderToolCall(block, toolResults, props));
 
   clearExpandedToolCalls();
   try {
