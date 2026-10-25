@@ -9,6 +9,26 @@ function cardKeys(messages) {
   return Object.keys(messages).filter((key) => key.startsWith("askUserQuestion.")).sort();
 }
 
+test("a tutorial session carries a questionnaire round whose answers the card shows", async () => {
+  const { SESSION_SCRIPTS } = await jiti.import("../demo/mock/sessions/scripts.ts");
+  const { parseAskUserQuestion, askUserQuestionBlocks } = await jiti.import("../lib/ask-user-question-view.ts");
+
+  const calls = SESSION_SCRIPTS.flatMap((script) => script.steps
+    .filter((step) => step.kind === "assistant")
+    .flatMap((step) => step.rounds.flatMap((round) => round.tools ?? [])));
+  const questionnaires = calls
+    .map((tool) => ({ tool, questions: parseAskUserQuestion({ toolName: tool.name, input: tool.args }) }))
+    .filter((call) => call.questions !== null);
+  assert.equal(questionnaires.length, 1, "one tutorial round must ask a questionnaire");
+
+  const [{ tool, questions }] = questionnaires;
+  assert.ok(questions.length >= 2, "the round asks a couple of questions");
+  const blocks = askUserQuestionBlocks(questions, { details: tool.details });
+  assert.equal(blocks.length, questions.length, "the card pairs every question with its answer");
+  assert.ok(blocks.every((block) => !block.unanswered), "the recorded result answers every question");
+  assert.ok(blocks.some((block) => block.selected.length > 0), "the card ticks the recorded answers");
+});
+
 test("the demo's locale tables carry the questionnaire card's keys, like the app's", async () => {
   const { enLocale } = await jiti.import("../demo/lib/i18n/messages/en.ts");
   const { zhCNLocale } = await jiti.import("../demo/lib/i18n/messages/zh-CN.ts");
