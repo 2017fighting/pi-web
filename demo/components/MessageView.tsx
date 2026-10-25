@@ -14,6 +14,8 @@ import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, 
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
+import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummary, parseAskUserQuestion } from "@/lib/ask-user-question-view";
+import { AskUserQuestionView } from "./AskUserQuestionView";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
@@ -951,7 +953,7 @@ function BlockView({ block, searchTarget, toolResults, isStreaming, streamingDur
     const tc = block as ToolCallContent;
     const result = toolResults?.get(tc.toolCallId);
     const duration = toolCallDurations?.get(tc.toolCallId);
-    return <ToolCallBlock block={tc} result={result} duration={duration} onOpenSession={onOpenSession} />;
+    return <ToolCallBlock block={tc} result={result} duration={duration} isStreaming={isStreaming} onOpenSession={onOpenSession} />;
   }
   return null;
 }
@@ -1094,7 +1096,7 @@ function isSubagentToolDetails(value: unknown): value is SubagentToolDetails {
   return details.kind === "pi-web-subagent" && typeof details.sessionId === "string";
 }
 
-function ToolCallBlock({ block, result, duration, onOpenSession }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; onOpenSession?: (sessionId: string) => void }) {
+function ToolCallBlock({ block, result, duration, isStreaming, onOpenSession }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; isStreaming?: boolean; onOpenSession?: (sessionId: string) => void }) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(() => isToolCallExpanded(block.toolCallId));
   const toggleExpanded = () => {
@@ -1108,10 +1110,23 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
   const isEditTool = isEditToolName(block.toolName);
   const resultDiff = result && !result.isError ? getResultDiff(result) : null;
   const patchFiles = getApplyPatchFiles(block, result);
+  // The questionnaire an `ask_user_question` call carried, or null for any other
+  // call — another name, another shape, or arguments still streaming.
+  const questionnaire = parseAskUserQuestion(block);
+  // Where that call stands: answered or declined from its result, else waiting
+  // while the message that made it is still streaming.
+  const questionState = questionnaire === null ? null : askUserQuestionState(result, isStreaming === true);
+  // The card already says what came back, so the result's envelope underneath it
+  // would print the same answer twice.
+  const hidesResult = questionnaire !== null && askUserQuestionHidesResult(result);
+  // The questionnaire the expanded card draws: each question with its ticks, the
+  // text typed and the note.
+  const questionBlocks = questionnaire === null ? null : askUserQuestionBlocks(questionnaire, result);
   // Flat arguments as rows instead of a JSON blob, unless the card has a view of
-  // its own (a write's file text, an applied patch). See `lib/tool-fields.ts`.
+  // its own (a write's file text, an applied patch, a questionnaire). See
+  // `lib/tool-fields.ts`.
   const toolFields =
-    !isStreamingInput && writtenFileText === null && patchFiles === null ? toolFieldsOfInput(block.input) : null;
+    !isStreamingInput && writtenFileText === null && patchFiles === null && questionnaire === null ? toolFieldsOfInput(block.input) : null;
   const patchLabel = isApplyPatchToolName(block.toolName)
     ? summarizeApplyPatchInput(block)
     : null;
@@ -1159,7 +1174,7 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
             {block.toolName}
           </span>
           <span style={{ color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-            {isStreamingInput ? t("chat.generatingToolInput") : (patchLabel ?? getToolPreview(block))}
+            {isStreamingInput ? t("chat.generatingToolInput") : (patchLabel ?? (questionnaire && questionState ? askUserQuestionSummary(questionnaire, questionState, t) : null) ?? getToolPreview(block))}
           </span>
           {duration !== undefined && (
             <span style={{ fontSize: 11, color: "var(--text-dim)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{duration}s</span>
@@ -1182,7 +1197,7 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
       </div>
 
       {/* ── Expanded: input args (only when no richer view exists) ── */}
-      {expanded && (isStreamingInput || !isEditTool) && !patchFiles && (
+      {expanded && (isStreamingInput || !isEditTool) && !patchFiles && questionnaire === null && (
         toolFields ? (
           <div
             style={{
@@ -1213,6 +1228,11 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
         )
       )}
 
+      {/* ── Expanded: the questionnaire an ask_user_question call carried ── */}
+      {expanded && questionBlocks && (
+        <AskUserQuestionView blocks={questionBlocks} isError={isError} />
+      )}
+
       {/* ── Result images — always visible, independent of the collapsed details ── */}
       {resultImages.length > 0 && <ResultImages images={resultImages} isError={isError} />}
 
@@ -1231,7 +1251,7 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
           isError={isError}
         />
       )}
-      {expanded && result && !patchFiles && (
+      {expanded && result && !patchFiles && !hidesResult && (
         resultDiff ? (
           <PairedDiffResult
             diff={resultDiff}
