@@ -42,6 +42,7 @@ differ from their originals:
 | File | Why |
 | --- | --- |
 | `app/layout.tsx`, `app/page.tsx`, `app/DemoRoot.tsx` | Load the mock, no service worker or manifest |
+| `app/globals.css` | A snapshot of the app's stylesheet carrying only the demo's five palettes; a theme token added in the app is copied here too |
 | `components/AppShell.tsx` | Open the README preview by default, base-path-safe `router.replace`, in-browser "Full history" |
 | `components/ChatWindow.tsx`, `FileIcons.tsx`, `ProviderIcon.tsx` | Prefix static assets with the Pages base path |
 | `components/FileViewer.tsx`, `FileExplorer.tsx`, `MarkdownBody.tsx` | Load images, media and downloads from the static snapshot |

@@ -17,8 +17,8 @@ const TRANSCRIPT_NOTICE_WARNING_COLOR = "#d97706";
 const CHIP_STYLE: React.CSSProperties = {
   padding: "1px 6px",
   borderRadius: 4,
-  background: "rgba(34,197,94,0.15)",
-  color: "#16a34a",
+  background: "color-mix(in srgb, var(--success) 15%, transparent)",
+  color: "var(--success)",
   fontSize: 11,
   fontWeight: 600,
   flexShrink: 0,
@@ -72,7 +72,7 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
             <li key={option.label} style={{ display: "flex", gap: 6, alignItems: "baseline", minWidth: 0 }}>
               <span
                 aria-hidden="true"
-                style={{ color: chosen ? "#16a34a" : "var(--text-dim)", flexShrink: 0, width: 12, textAlign: "center" }}
+                style={{ color: chosen ? "var(--success)" : "var(--text-dim)", flexShrink: 0, width: 12, textAlign: "center" }}
               >
                 {chosen ? "✓" : "○"}
               </span>
@@ -102,7 +102,7 @@ export function AskUserQuestionView({ blocks, isError }: {
   return (
     <div
       style={{
-        borderTop: isError ? "1px solid rgba(248,113,113,0.25)" : "1px solid rgba(34,197,94,0.2)",
+        borderTop: isError ? "1px solid color-mix(in srgb, var(--error) 25%, transparent)" : "1px solid color-mix(in srgb, var(--success) 20%, transparent)",
         background: "var(--bg-subtle)",
         padding: "8px 10px",
         display: "flex",
