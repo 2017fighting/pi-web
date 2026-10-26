@@ -18,11 +18,10 @@ import {
 /** Calls shown before the rest are folded behind a button; the newest stay visible. */
 export const CODEMODE_VISIBLE_CALLS = 20;
 
-// `ok` / `error` read the theme's status tokens; `running` is the warning amber
-// the transcript notices use (no warning token exists yet), `cancelled` a plain
-// dim neutral — neither is a card's success/error status.
+// `ok` / `error` / `running` read the theme's status tokens; `cancelled` is a
+// plain dim neutral — not a card's success/error status.
 const STATUS_STYLE: Record<CodemodeCallStatus, { icon: string; color: string }> = {
-  running: { icon: "…", color: "#d97706" },
+  running: { icon: "…", color: "var(--warning)" },
   ok: { icon: "✓", color: "var(--success)" },
   error: { icon: "✗", color: "var(--error)" },
   cancelled: { icon: "⊘", color: "var(--text-dim)" },

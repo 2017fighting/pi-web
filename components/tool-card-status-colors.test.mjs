@@ -97,6 +97,20 @@ test("the codemode call list draws its status chrome from the theme tokens", () 
   }
 });
 
+test("the unanswered chip and the running call draw the warning token", () => {
+  const unanswered = render(React.createElement(AskUserQuestionView, { blocks: [{ ...BLOCK, unanswered: true }], isError: false }));
+  assert.match(unanswered, /var\(--warning\)/);
+  assert.doesNotMatch(unanswered, /#d97706/);
+
+  const running = render(React.createElement(CodemodeCallList, {
+    calls: [{ id: "call-1", name: "bash", args: "{}", status: "running" }],
+    omitted: 0,
+    isError: false,
+  }));
+  assert.match(running, /var\(--warning\)/);
+  assert.doesNotMatch(running, /#d97706/);
+});
+
 test("the generic tool card draws its status chrome from the theme tokens", (t) => {
   const call = { type: "toolCall", toolCallId: "call-status", toolName: "read", input: { path: "README.md" } };
   const message = { role: "assistant", provider: "anthropic", model: "claude-test", content: [call] };

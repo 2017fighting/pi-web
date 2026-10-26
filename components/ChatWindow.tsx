@@ -1569,7 +1569,7 @@ function NoticeShelf({ notices, floating = false, onPauseChange }: { notices: No
         const color = notice.type === "error"
           ? "#ef4444"
           : notice.type === "warning"
-            ? "#d97706"
+            ? "var(--warning)"
             : notice.type === "success"
               ? "#10b981"
               : "var(--accent)";

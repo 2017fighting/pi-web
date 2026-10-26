@@ -383,8 +383,8 @@ function PackageDetail({
                   fontSize: 10,
                   padding: "1px 5px",
                   borderRadius: 3,
-                  background: "rgba(245,158,11,0.12)",
-                  color: "#d97706",
+                  background: "color-mix(in srgb, var(--warning) 12%, transparent)",
+                  color: "var(--warning)",
                 }}
               >
                 {t("i18n.filtered")}

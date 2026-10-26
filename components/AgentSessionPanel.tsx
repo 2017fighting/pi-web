@@ -130,7 +130,7 @@ export function statusColor(status: SubagentSessionStatus): string {
   if (status === "running" || status === "starting") return "var(--accent)";
   if (status === "completed") return "#16a34a";
   if (status === "failed") return "#dc2626";
-  if (status === "aborted") return "#d97706";
+  if (status === "aborted") return "var(--warning)";
   return "var(--text-dim)";
 }
 

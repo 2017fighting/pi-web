@@ -1,7 +1,6 @@
 "use client";
 
 import { MarkdownBody } from "./MarkdownBody";
-import { TRANSCRIPT_NOTICE_WARNING_COLOR } from "./TranscriptNotices";
 import { useI18n } from "@/hooks/useI18n";
 import { statusSeparatorBorder } from "@/lib/status-colors";
 import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
@@ -56,7 +55,7 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
           {question.header && <span style={CHIP_STYLE}>{question.header}</span>}
           {question.multiSelect && <span style={TAG_STYLE}>{t("askUserQuestion.multiSelect")}</span>}
           {block.unanswered && (
-            <span style={{ ...TAG_STYLE, border: `1px solid ${TRANSCRIPT_NOTICE_WARNING_COLOR}`, color: TRANSCRIPT_NOTICE_WARNING_COLOR }}>
+            <span style={{ ...TAG_STYLE, border: "1px solid var(--warning)", color: "var(--warning)" }}>
               {t("askUserQuestion.unanswered")}
             </span>
           )}

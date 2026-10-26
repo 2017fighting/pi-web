@@ -11,10 +11,6 @@ import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
 // typed answer and a note on their own lines. Nothing here is clickable: the call is
 // over, and a click would fabricate an answer that never happened.
 
-// The demo does not copy the transcript notice lines, so the warning color pi's
-// TUI draws them in lives here instead of in `components/TranscriptNotices.tsx`.
-const TRANSCRIPT_NOTICE_WARNING_COLOR = "#d97706";
-
 const CHIP_STYLE: React.CSSProperties = {
   padding: "1px 6px",
   borderRadius: 4,
@@ -59,7 +55,7 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
           {question.header && <span style={CHIP_STYLE}>{question.header}</span>}
           {question.multiSelect && <span style={TAG_STYLE}>{t("askUserQuestion.multiSelect")}</span>}
           {block.unanswered && (
-            <span style={{ ...TAG_STYLE, border: `1px solid ${TRANSCRIPT_NOTICE_WARNING_COLOR}`, color: TRANSCRIPT_NOTICE_WARNING_COLOR }}>
+            <span style={{ ...TAG_STYLE, border: "1px solid var(--warning)", color: "var(--warning)" }}>
               {t("askUserQuestion.unanswered")}
             </span>
           )}
