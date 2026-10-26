@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { createJiti } from "jiti";
 
-// The tool cards draw their success/error chrome from these two tokens. Each
-// theme has to carry both, or `color-mix()` over an undefined token drops the
-// whole declaration and the card loses its border and background.
+// The status surfaces draw their success/error/warning chrome from these
+// tokens. Each theme has to carry all three, or `color-mix()` over an undefined
+// token drops the whole declaration and the surface loses its chrome.
 const globals = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 const demoGlobals = readFileSync(new URL("../demo/app/globals.css", import.meta.url), "utf8");
 
@@ -55,14 +55,14 @@ function palettes(source) {
 function missingTokens(source) {
   const missing = [];
   for (const { selector, body } of palettes(source)) {
-    for (const token of ["--success", "--error"]) {
+    for (const token of ["--success", "--error", "--warning"]) {
       if (!new RegExp(`${token}\\s*:`).test(body)) missing.push(`${selector} → ${token}`);
     }
   }
   return missing;
 }
 
-test("every theme carries the success and error status tokens", () => {
+test("every theme carries the success, error and warning status tokens", () => {
   const appPalettes = palettes(globals);
   assert.ok(appPalettes.length >= 13, `expected every app palette, found ${appPalettes.length}`);
   assert.deepEqual(missingTokens(globals), []);
