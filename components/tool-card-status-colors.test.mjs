@@ -111,6 +111,22 @@ test("the unanswered chip and the running call draw the warning token", () => {
   assert.doesNotMatch(running, /#d97706/);
 });
 
+test("the message view's banners draw the status tokens", () => {
+  const assistant = (extra) => ({ role: "assistant", provider: "anthropic", model: "claude-test", content: [], ...extra });
+
+  const providerError = render(React.createElement(MessageView, {
+    message: assistant({ stopReason: "error", errorMessage: "Connection closed" }),
+  }));
+  assert.match(providerError, /var\(--error\)/);
+  assert.doesNotMatch(providerError, /#ef4444/);
+  assert.doesNotMatch(providerError, /rgba\(239,68,68/);
+
+  const truncated = render(React.createElement(MessageView, { message: assistant({ stopReason: "length" }) }));
+  assert.match(truncated, /var\(--warning\)/);
+  assert.doesNotMatch(truncated, /#ca8a04/);
+  assert.doesNotMatch(truncated, /rgba\(234,179,8/);
+});
+
 test("the generic tool card draws its status chrome from the theme tokens", (t) => {
   const call = { type: "toolCall", toolCallId: "call-status", toolName: "read", input: { path: "README.md" } };
   const message = { role: "assistant", provider: "anthropic", model: "claude-test", content: [call] };
