@@ -294,6 +294,9 @@ Location: `~/.pi/agent/sessions/<encoded-cwd>/<timestamp>_<uuid>.jsonl`
 --font-mono
 ```
 
+The amber a running codemode call and the transcript notices draw (`#d97706`)
+has no token: it is the one non-status color still written as a literal.
+
 ## Agent skills
 
 ### Issue tracker

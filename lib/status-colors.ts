@@ -4,23 +4,22 @@
  * reference `--success` / `--error`; every palette defines both.
  */
 
+/** One status line: the token, and how much of it the border carries. */
+function statusBorderLine(token: "--success" | "--error", percent: number): string {
+  return `1px solid color-mix(in srgb, var(${token}) ${percent}%, transparent)`;
+}
+
 /** The card's outer edge: the strongest status line. */
 export function statusCardBorder(isError: boolean): string {
-  return isError
-    ? "1px solid color-mix(in srgb, var(--error) 45%, transparent)"
-    : "1px solid color-mix(in srgb, var(--success) 25%, transparent)";
+  return statusBorderLine(isError ? "--error" : "--success", isError ? 45 : 25);
 }
 
 /** An inner separator between the card's header, body and result. */
 export function statusSeparatorBorder(isError: boolean): string {
-  return isError
-    ? "1px solid color-mix(in srgb, var(--error) 25%, transparent)"
-    : "1px solid color-mix(in srgb, var(--success) 20%, transparent)";
+  return statusBorderLine(isError ? "--error" : "--success", isError ? 25 : 20);
 }
 
 /** The line above a tool card's paired result. */
 export function statusResultBorder(isError: boolean): string {
-  return isError
-    ? "1px solid color-mix(in srgb, var(--error) 30%, transparent)"
-    : "1px solid color-mix(in srgb, var(--success) 15%, transparent)";
+  return statusBorderLine(isError ? "--error" : "--success", isError ? 30 : 15);
 }
