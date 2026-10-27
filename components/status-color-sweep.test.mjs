@@ -45,8 +45,7 @@ const SWEPT_SOURCES = [
 ];
 
 // The status hexes the sweep bans, and the `rgba(...)` triplets they were
-// written as. The palettes still define the tokens themselves (`--success:
-// #4ade80`); a *use* of one is what is banned.
+// written as. A surface draws a theme token instead of any of these.
 const BANNED_LITERAL = /#(?:ef4444|f87171|dc2626|16a34a|d97706|10b981|4ade80|22c55e|f59e0b|fee2e2|dcfce7|fecaca|bbf7d0)\b|rgba\(\s*(?:239\s*,\s*68\s*,\s*68|34\s*,\s*197\s*,\s*94|74\s*,\s*222\s*,\s*128)/i;
 // A swept surface draws a theme status token, directly or through the shared
 // error-color helper. The trust dialog is the one exception: it keeps its layout
