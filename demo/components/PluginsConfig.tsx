@@ -31,6 +31,7 @@ import {
   ConfigStatusDot,
   ConfigSwitch,
 } from "./SettingsUi";
+import { STATUS_ERROR_COLOR } from "@/lib/status-colors";
 
 type PluginScope = PluginPackageInfo["scope"];
 type PluginAction = "install" | "remove" | "update" | "disable" | "enable";
@@ -92,7 +93,7 @@ function statusColor(status: PluginPackageInfo["status"]): string {
   if (status === "loaded") return "var(--accent)";
   if (status === "installed") return "#f59e0b";
   if (status === "disabled") return "var(--text-dim)";
-  return "#ef4444";
+  return STATUS_ERROR_COLOR;
 }
 
 function ResourceList({ pkg }: { pkg: PluginPackageInfo }) {
@@ -403,7 +404,7 @@ function AddPluginPanel({
       </div>
 
       {actionError && (
-        <div style={{ fontSize: 12, color: "#ef4444", whiteSpace: "pre-wrap" }}>
+        <div style={{ fontSize: 12, color: "var(--error)", whiteSpace: "pre-wrap" }}>
           {actionError}
         </div>
       )}
@@ -583,7 +584,7 @@ function PackageDetail({
             )}
           </div>
           {updateError && (
-            <span style={{ fontSize: 12, color: "#ef4444" }}>{updateError}</span>
+            <span style={{ fontSize: 12, color: "var(--error)" }}>{updateError}</span>
           )}
         </div>
         <div style={{ color: "var(--text-dim)" }}>{t("i18n.package")}</div>
@@ -595,7 +596,7 @@ function PackageDetail({
         <div style={{ color: "var(--text-dim)" }}>{t("i18n.installedPath")}</div>
         <div
           style={{
-            color: pkg.installedPath ? "var(--text-muted)" : "#ef4444",
+            color: pkg.installedPath ? "var(--text-muted)" : "var(--error)",
             fontFamily: "var(--font-mono)",
             overflowWrap: "anywhere",
           }}
@@ -614,12 +615,12 @@ function PackageDetail({
       </div>
 
       {actionMessage && (
-        <div style={{ fontSize: 12, color: "#16a34a" }}>
+        <div style={{ fontSize: 12, color: "var(--success)" }}>
           {actionMessage}
         </div>
       )}
       {actionError && (
-        <div style={{ fontSize: 12, color: "#ef4444", whiteSpace: "pre-wrap" }}>
+        <div style={{ fontSize: 12, color: "var(--error)", whiteSpace: "pre-wrap" }}>
           {actionError}
         </div>
       )}
@@ -1058,7 +1059,7 @@ export function PluginsConfig({
             ) : data?.diagnostics.length ? (
               <span
                 title={data.diagnostics.map((d) => `${d.type}: ${d.source ? `${d.source}: ` : ""}${d.message}`).join("\n")}
-                style={{ color: data.diagnostics.some((d) => d.type === "error") ? "#ef4444" : "var(--warning)" }}
+                style={{ color: data.diagnostics.some((d) => d.type === "error") ? "var(--error)" : "var(--warning)" }}
               >
                 {data.diagnostics.length} diagnostic{data.diagnostics.length === 1 ? "" : "s"}
               </span>

@@ -565,7 +565,7 @@ function QueuedMessageRow({ kind, text }: { kind: "steer" | "follow-up"; text: s
 }
 
 function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "warning"; title: string; body: string; onClose?: () => void }) {
-  const color = tone === "error" ? "239,68,68" : "234,179,8";
+  const color = tone === "error" ? "var(--error)" : "rgb(234,179,8)";
   return (
     <div
       role="alert"
@@ -577,10 +577,10 @@ function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "wa
         marginBottom: 8,
         padding: "7px 10px",
         overflowY: "auto",
-        border: `1px solid rgba(${color},0.3)`,
+        border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
         borderRadius: 6,
-        background: `rgba(${color},0.07)`,
-        color: `rgb(${color})`,
+        background: `color-mix(in srgb, ${color} 7%, transparent)`,
+        color,
         fontSize: 11,
         lineHeight: 1.45,
       }}
@@ -1869,10 +1869,10 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
               gap: 6,
               marginBottom: 8,
               padding: onDismissCompactError ? "3px 3px 3px 10px" : "7px 10px",
-              background: "rgba(239,68,68,0.07)",
-              border: "1px solid rgba(239,68,68,0.3)",
+              background: "color-mix(in srgb, var(--error) 7%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
               borderRadius: 6,
-              color: "#ef4444",
+              color: "var(--error)",
               fontFamily: "var(--font-mono)",
               fontSize: 12,
               lineHeight: 1.5,
@@ -2739,21 +2739,21 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
                     padding: isMobile ? "0 6px" : "8px 12px",
                     width: isMobile ? "auto" : undefined,
                     height: 32,
-                    background: isCompacting ? "rgba(239,68,68,0.08)" : "none",
+                    background: isCompacting ? "color-mix(in srgb, var(--error) 8%, transparent)" : "none",
                     border: "none",
                     borderRadius: 9,
-                    color: isCompacting ? "#ef4444" : "var(--text-muted)",
+                    color: isCompacting ? "var(--error)" : "var(--text-muted)",
                     cursor: "pointer",
                     fontSize: 12,
                     transition: "background 0.12s, color 0.12s",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = isCompacting ? "rgba(239,68,68,0.16)" : "var(--bg-hover)";
-                    e.currentTarget.style.color = isCompacting ? "#ef4444" : "var(--text)";
+                    e.currentTarget.style.background = isCompacting ? "color-mix(in srgb, var(--error) 16%, transparent)" : "var(--bg-hover)";
+                    e.currentTarget.style.color = isCompacting ? "var(--error)" : "var(--text)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = isCompacting ? "rgba(239,68,68,0.08)" : "none";
-                    e.currentTarget.style.color = isCompacting ? "#ef4444" : "var(--text-muted)";
+                    e.currentTarget.style.background = isCompacting ? "color-mix(in srgb, var(--error) 8%, transparent)" : "none";
+                    e.currentTarget.style.color = isCompacting ? "var(--error)" : "var(--text-muted)";
                   }}
                    title={isCompacting ? t("chat.stopCompaction") : t("chat.compactContext")}
                    aria-label={isCompacting ? t("chat.stopCompaction") : t("chat.compactContext")}
@@ -2778,17 +2778,17 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
                   display: "flex", alignItems: "center", gap: 6,
                   padding: "8px 14px",
                   height: 32,
-                  background: "rgba(239,68,68,0.08)",
-                  border: "1px solid rgba(239,68,68,0.3)",
+                  background: "color-mix(in srgb, var(--error) 8%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
                   borderRadius: 9,
-                  color: "#ef4444",
+                  color: "var(--error)",
                   cursor: "pointer",
                   fontSize: 12, fontWeight: 600,
                   whiteSpace: "nowrap", letterSpacing: "-0.01em",
                   transition: "background 0.12s",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.16)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "color-mix(in srgb, var(--error) 16%, transparent)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "color-mix(in srgb, var(--error) 8%, transparent)"; }}
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <rect x="1.5" y="1.5" width="7" height="7" rx="1.5" fill="currentColor" />

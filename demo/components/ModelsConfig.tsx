@@ -461,7 +461,7 @@ function ProviderDetail({ name, provider, onChange, onRename, onDelete, onAddMod
         )}
 
         {discoveryState.phase === "error" && (
-          <div style={{ padding: "7px 9px", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 5, color: "#ef4444", fontSize: 11, lineHeight: 1.4 }}>
+          <div style={{ padding: "7px 9px", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)", borderRadius: 5, color: "var(--error)", fontSize: 11, lineHeight: 1.4 }}>
             {discoveryState.message}
           </div>
         )}
@@ -562,7 +562,7 @@ const LEVEL_COLORS: Record<ThinkingLevel, string> = {
   medium:  "#a78bfa",
   high:    "#f472b6",
   xhigh:   "#fb923c",
-  max:     "#ef4444",
+  max:     "var(--error)",
 };
 
 function ThinkingLevelMapEditor({
@@ -610,7 +610,7 @@ function ThinkingLevelMapEditor({
           fontWeight: 600,
         };
         const btnActiveDisabled: React.CSSProperties = {
-          background: "#ef4444",
+          background: "var(--error)",
           color: "#fff",
           fontWeight: 600,
         };
@@ -742,9 +742,9 @@ function HeaderListEditor({ headers, onChange }: {
   const rowBtnStyle = {
     padding: "6px 9px",
     background: "none",
-    border: "1px solid rgba(239,68,68,0.3)",
+    border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
     borderRadius: 4,
-    color: "#ef4444",
+    color: "var(--error)",
     cursor: "pointer",
     fontSize: 11,
     lineHeight: 1,
@@ -990,7 +990,7 @@ function ModelDetail({
     ? catalogState.message
     : catalogResultSummary;
   const catalogStatusColor = catalogState.phase === "error"
-    ? "#ef4444"
+    ? "var(--error)"
     : catalogState.phase === "success" && catalogState.recommendation.price.status === "unreliable"
       ? "var(--warning)"
       : "var(--text-dim)";
@@ -1046,7 +1046,7 @@ function ModelDetail({
                 maxWidth: 260,
                 height: 28,
                 padding: "0 8px",
-                border: `1px solid ${testState.phase === "error" ? "#fecaca" : testState.phase === "success" ? "#bbf7d0" : "var(--border)"}`,
+                border: `1px solid ${testState.phase === "error" ? "color-mix(in srgb, var(--error) 40%, transparent)" : testState.phase === "success" ? "color-mix(in srgb, var(--success) 40%, transparent)" : "var(--border)"}`,
                 borderRadius: 4,
                 background: testState.phase === "error" ? "#fee2e2" : testState.phase === "success" ? "#dcfce7" : "#e5e7eb",
                 color: "#111827",
@@ -1554,7 +1554,7 @@ function OAuthDetail({ provider, onRefresh, enabledModels }: {
              <p style={{ margin: 0, fontSize: 12, color: "#4ade80" }}>{t("i18n.connectedSuccessfully")}</p>
         )}
         {loginState.phase === "error" && (
-          <p style={{ margin: 0, fontSize: 12, color: "#f87171" }}>{loginState.message}</p>
+          <p style={{ margin: 0, fontSize: 12, color: "var(--error)" }}>{loginState.message}</p>
         )}
       </div>
 
@@ -1674,7 +1674,7 @@ function ApiKeyDetail({ provider, onRefresh, enabledModels }: {
           disabled={saving || !apiKey.trim() || savedOk}
           style={{
             padding: "6px 12px",
-            background: savedOk ? "#16a34a" : apiKey.trim() ? "var(--accent)" : "var(--bg-panel)",
+            background: savedOk ? "var(--success)" : apiKey.trim() ? "var(--accent)" : "var(--bg-panel)",
             border: "none", borderRadius: 5,
             color: savedOk ? "#fff" : apiKey.trim() ? "var(--accent-contrast)" : "var(--text-dim)",
             cursor: (saving || !apiKey.trim() || savedOk) ? "not-allowed" : "pointer",
@@ -1691,7 +1691,7 @@ function ApiKeyDetail({ provider, onRefresh, enabledModels }: {
         </button>
       </div>
 
-      {error && <p style={{ margin: 0, fontSize: 12, color: "#f87171" }}>{error}</p>}
+      {error && <p style={{ margin: 0, fontSize: 12, color: "var(--error)" }}>{error}</p>}
 
       <ProviderUsageSummary providerId={provider.id} enabled={provider.configured} />
 
@@ -2222,7 +2222,7 @@ export function ModelsConfig({ onClose, embedded = false, cwd = null }: {
         </ConfigSplitView>
 
         {/* Footer */}
-        <ConfigFooter status={saveError && <span style={{ color: "#f87171" }}>{saveError}</span>}>
+        <ConfigFooter status={saveError && <span style={{ color: "var(--error)" }}>{saveError}</span>}>
           {!embedded && <ConfigButton onClick={onClose}>{t("i18n.cancel")}</ConfigButton>}
           <ConfigButton
             variant="primary"

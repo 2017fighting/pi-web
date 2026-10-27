@@ -48,6 +48,7 @@ import {
   ConfigTrustNotice,
 } from "./SettingsUi";
 import { itemsToSwitch, projectTrustReloadKey } from "./settings-ui-helpers";
+import { STATUS_ERROR_COLOR } from "@/lib/status-colors";
 
 type PluginScope = PluginPackageInfo["scope"];
 type PluginAction = "install" | "remove" | "update" | "disable" | "enable";
@@ -153,7 +154,7 @@ function statusColor(status: PluginPackageInfo["status"]): string {
   if (status === "loaded") return "var(--accent)";
   if (status === "installed") return "#f59e0b";
   if (status === "disabled") return "var(--text-dim)";
-  return "#ef4444";
+  return STATUS_ERROR_COLOR;
 }
 
 function ResourceList({ pkg }: { pkg: PluginPackageInfo }) {
@@ -499,7 +500,7 @@ function PackageDetail({
             )}
           </div>
           {updateError && (
-            <span style={{ fontSize: 12, color: "#ef4444" }}>{updateError}</span>
+            <span style={{ fontSize: 12, color: "var(--error)" }}>{updateError}</span>
           )}
         </ConfigDetailGridRow>
         <ConfigDetailGridRow label={t("i18n.package")} mono>
@@ -522,12 +523,12 @@ function PackageDetail({
       </div>
 
       {actionMessage && (
-        <div style={{ fontSize: 12, color: "#16a34a" }}>
+        <div style={{ fontSize: 12, color: "var(--success)" }}>
           {actionMessage}
         </div>
       )}
       {actionError && (
-        <div style={{ fontSize: 12, color: "#ef4444", whiteSpace: "pre-wrap" }}>
+        <div style={{ fontSize: 12, color: "var(--error)", whiteSpace: "pre-wrap" }}>
           {actionError}
         </div>
       )}

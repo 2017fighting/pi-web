@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/hooks/useI18n";
 import { countRunningSubagents } from "@/lib/session-family";
+import { STATUS_ERROR_COLOR } from "@/lib/status-colors";
 import type { SessionUsageSummary } from "@/lib/session-stats";
 import { formatActiveDuration, formatCompactCount, formatCostShort } from "@/lib/session-stats-format";
 import type { SessionInfo, SubagentSessionStatus } from "@/lib/types";
@@ -128,8 +129,8 @@ function formatRelativeTime(value: string, locale: string): string {
 
 export function statusColor(status: SubagentSessionStatus): string {
   if (status === "running" || status === "starting") return "var(--accent)";
-  if (status === "completed") return "#16a34a";
-  if (status === "failed") return "#dc2626";
+  if (status === "completed") return "var(--success)";
+  if (status === "failed") return STATUS_ERROR_COLOR;
   if (status === "aborted") return "var(--warning)";
   return "var(--text-dim)";
 }

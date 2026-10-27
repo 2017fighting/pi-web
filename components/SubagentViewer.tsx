@@ -241,7 +241,7 @@ export function SubagentViewer({ sessionId, fallbackLabel, running, onOpenFile }
             {running ? t("subagent.viewer.starting") : t("subagent.viewer.error")}
           </div>
         ) : error && messages.length === 0 ? (
-          <div role="alert" style={{ padding: "24px 16px", color: "#dc2626", fontSize: 12, textAlign: "center" }}>
+          <div role="alert" style={{ padding: "24px 16px", color: "var(--error)", fontSize: 12, textAlign: "center" }}>
             {t("subagent.viewer.error")}
             <div style={{ marginTop: 6, color: "var(--text-dim)", fontFamily: "var(--font-mono)", overflowWrap: "anywhere" }}>{error}</div>
           </div>

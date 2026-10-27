@@ -1422,7 +1422,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
                 onAbort={closeQuotedSelection}
                 isStreaming={false}
               />
-              {quoteError && <div role="alert" style={{ color: "#dc2626", fontSize: 12, overflowWrap: "anywhere" }}>{quoteError}</div>}
+              {quoteError && <div role="alert" style={{ color: "var(--error)", fontSize: 12, overflowWrap: "anywhere" }}>{quoteError}</div>}
             </fieldset>
           ) : <>
           <button
@@ -1567,7 +1567,7 @@ function NoticeShelf({ notices, floating = false, onPauseChange }: { notices: No
     >
       {notices.map((notice, index) => {
         const color = notice.type === "error"
-          ? "#ef4444"
+          ? "var(--error)"
           : notice.type === "warning"
             ? "var(--warning)"
             : notice.type === "success"
