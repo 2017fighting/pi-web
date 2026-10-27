@@ -1,8 +1,12 @@
 /**
- * The top borders a tool card draws from the theme's status tokens. `color-mix()`
- * over an undefined token drops the whole declaration, so these only ever
- * reference `--success` / `--error`; every palette defines both.
+ * The status colors a tool card, dot or label draws from the theme's tokens.
+ * `color-mix()` over an undefined token drops the whole declaration, so the
+ * borders below only ever reference `--success` / `--error`; every palette
+ * defines them.
  */
+
+/** A failed state's color, for a status dot or label. */
+export const STATUS_ERROR_COLOR = "var(--error)";
 
 /** One status line: the token, and how much of it the border carries. */
 function statusBorderLine(token: "--success" | "--error", percent: number): string {
