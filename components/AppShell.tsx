@@ -1881,7 +1881,7 @@ export function AppShell() {
     if (contextUsage?.contextWindow) {
       const percent = contextUsage.percent;
       if (percent !== null && percent > 90) contextColor = "var(--error)";
-      else if (percent !== null && percent > 70) contextColor = "rgba(234,179,8,0.95)";
+      else if (percent !== null && percent > 70) contextColor = "var(--warning)";
       desktopContextText = percent !== null
         ? `${percent.toFixed(0)}% / ${formatCompact(contextUsage.contextWindow)}`
         : `? / ${formatCompact(contextUsage.contextWindow)}`;

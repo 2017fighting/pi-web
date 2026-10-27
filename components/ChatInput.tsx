@@ -565,7 +565,7 @@ function QueuedMessageRow({ kind, text }: { kind: "steer" | "follow-up"; text: s
 }
 
 function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "warning"; title: string; body: string; onClose?: () => void }) {
-  const color = tone === "error" ? "var(--error)" : "rgb(234,179,8)";
+  const color = tone === "error" ? "var(--error)" : "var(--warning)";
   return (
     <div
       role="alert"

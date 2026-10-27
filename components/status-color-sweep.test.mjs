@@ -99,5 +99,5 @@ test("the status helpers draw the theme's error and success tokens", () => {
   assert.equal(statusColor("failed"), "var(--error)");
   assert.equal(statusColor("completed"), "var(--success)");
   assert.equal(mcpStatusDot("error").color, "var(--error)");
-  assert.equal(mcpStatusDot("warning").color, "#f59e0b");
+  assert.equal(mcpStatusDot("warning").color, "var(--warning)");
 });

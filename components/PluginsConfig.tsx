@@ -152,7 +152,7 @@ function findInstalledPackage(
 
 function statusColor(status: PluginPackageInfo["status"]): string {
   if (status === "loaded") return "var(--accent)";
-  if (status === "installed") return "#f59e0b";
+  if (status === "installed") return "var(--warning)";
   if (status === "disabled") return "var(--text-dim)";
   return STATUS_ERROR_COLOR;
 }

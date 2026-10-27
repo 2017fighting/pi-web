@@ -392,7 +392,7 @@ function DiffView({ patch }: { patch: string }) {
           const prefix =
             line.type === "added" ? "+" : line.type === "removed" ? "-" : " ";
           const prefixColor =
-            line.type === "added" ? "#4ade80" : line.type === "removed" ? "var(--error)" : "var(--text-dim)";
+            line.type === "added" ? "var(--success)" : line.type === "removed" ? "var(--error)" : "var(--text-dim)";
 
           return (
             <div
@@ -403,7 +403,7 @@ function DiffView({ patch }: { patch: string }) {
                 minWidth: "100%",
                 background: bg,
                 borderLeft: line.type === "added"
-                  ? "3px solid #4ade80"
+                  ? "3px solid var(--success)"
                   : line.type === "removed"
                   ? "3px solid var(--error)"
                   : "3px solid transparent",
