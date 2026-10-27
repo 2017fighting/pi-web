@@ -1571,7 +1571,7 @@ function NoticeShelf({ notices, floating = false, onPauseChange }: { notices: No
           : notice.type === "warning"
             ? "var(--warning)"
             : notice.type === "success"
-              ? "#10b981"
+              ? "var(--success)"
               : "var(--accent)";
         return (
           <div

@@ -145,10 +145,10 @@ const GIT_STATUS_KEYS: Record<GitFileStatusKind, string> = {
 
 const GIT_STATUS_COLORS: Record<GitFileStatusKind, string> = {
   modified: "#d6a84b",
-  added: "#4ade80",
+  added: "var(--success)",
   deleted: "var(--error)",
   renamed: "#60a5fa",
-  untracked: "#4ade80",
+  untracked: "var(--success)",
   conflict: "var(--error)",
 };
 

@@ -37,7 +37,11 @@ const SWEPT_SOURCES = [
 ];
 
 // The hexes ticket #10 bans, and the `rgba(...)` triplets they were written as.
-const BANNED_LITERAL = /#(?:ef4444|f87171|dc2626|16a34a|d97706|fecaca|bbf7d0)\b|rgba\(\s*(?:239\s*,\s*68\s*,\s*68|34\s*,\s*197\s*,\s*94)/i;
+// `#4ade80` and the `#fee2e2`/`#dcfce7` test badge are not listed: the watching
+// dots and the models/usage provider dots are still literals, and the badge's
+// light background carries near-black text on purpose (a token mix would be
+// unreadable in a dark theme). Both are tracked by their own follow-up ticket.
+const BANNED_LITERAL = /#(?:ef4444|f87171|dc2626|16a34a|d97706|10b981|fecaca|bbf7d0)\b|rgba\(\s*(?:239\s*,\s*68\s*,\s*68|34\s*,\s*197\s*,\s*94)/i;
 // A swept surface draws a theme status token, directly or through the shared
 // error-color helper.
 const STATUS_TOKEN = /var\(--(?:error|success|warning)\)|STATUS_ERROR_COLOR/;
@@ -93,6 +97,25 @@ test("the file explorer draws a deleted file's badge from the error token", () =
   }));
   assert.match(html, /var\(--error\)/);
   assert.doesNotMatch(html, /#f87171/);
+});
+
+test("the file explorer draws an added file's badge from the success token", () => {
+  const t = (key, params) => translateMessage("en", key, { en: enLocale.messages }, params);
+  const node = { name: "new.ts", fullPath: "/hub/new.ts", isDir: false, size: 0 };
+  const html = render(React.createElement(TreeNode, {
+    node,
+    depth: 0,
+    cwd: "/hub",
+    onOpenFile() {},
+    expandedPaths: new Set(),
+    onToggleExpanded() {},
+    highlightedPaths: new Set(),
+    gitStatusByPath: new Map([["/hub/new.ts", { filePath: "/hub/new.ts", status: "added", code: "A " }]]),
+    changedDirectoryPaths: new Set(),
+    t,
+  }));
+  assert.match(html, /var\(--success\)/);
+  assert.doesNotMatch(html, /#4ade80/);
 });
 
 test("the status helpers draw the theme's error and success tokens", () => {
