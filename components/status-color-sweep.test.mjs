@@ -5,8 +5,9 @@ import { createJiti } from "jiti";
 
 // Ticket #10 swept the status-color literals out of the surfaces below,
 // drawing `var(--error)` / `var(--success)` / `var(--warning)` (or a
-// `color-mix()` over them) instead. The grep pins every one of them; the
-// renders below pin what a reader sees on the surfaces a test can mount.
+// `color-mix()` over them) instead; ticket #11 finished the sweep. The grep
+// pins every one of them; the renders below pin what a reader sees on the
+// surfaces a test can mount.
 const SWEPT_SOURCES = [
   "components/ChatWindow.tsx",
   "components/AppShell.tsx",
@@ -34,24 +35,28 @@ const SWEPT_SOURCES = [
   "demo/components/FileViewer.tsx",
   "demo/components/AgentSessionPanel.tsx",
   "demo/components/DirectoryPicker.tsx",
+  "components/ProjectTrustDialog.tsx",
+  "demo/components/ProjectTrustDialog.tsx",
+  "demo/components/SessionSidebar.tsx",
 ];
 
-// The hexes ticket #10 bans, and the `rgba(...)` triplets they were written as.
-// `#4ade80` and the `#fee2e2`/`#dcfce7` test badge are not listed: the watching
-// dots and the models/usage provider dots are still literals, and the badge's
-// light background carries near-black text on purpose (a token mix would be
-// unreadable in a dark theme). Both are tracked by their own follow-up ticket.
-const BANNED_LITERAL = /#(?:ef4444|f87171|dc2626|16a34a|d97706|10b981|fecaca|bbf7d0)\b|rgba\(\s*(?:239\s*,\s*68\s*,\s*68|34\s*,\s*197\s*,\s*94)/i;
+// The status hexes the sweep bans, and the `rgba(...)` triplets they were
+// written as. The palettes still define the tokens themselves (`--success:
+// #4ade80`); a *use* of one is what is banned.
+const BANNED_LITERAL = /#(?:ef4444|f87171|dc2626|16a34a|d97706|10b981|4ade80|22c55e|f59e0b|fecaca|bbf7d0)\b|rgba\(\s*(?:239\s*,\s*68\s*,\s*68|34\s*,\s*197\s*,\s*94|74\s*,\s*222\s*,\s*128)/i;
 // A swept surface draws a theme status token, directly or through the shared
-// error-color helper.
+// error-color helper. The trust dialog is the one exception: it keeps its layout
+// in CSS, so its shield takes the token from the icon class' `color` (asserted
+// in the render below) and the file itself draws none.
 const STATUS_TOKEN = /var\(--(?:error|success|warning)\)|STATUS_ERROR_COLOR/;
+const CSS_COLORED_SOURCES = new Set(["components/ProjectTrustDialog.tsx"]);
 
 test("no swept surface keeps a status-color literal", () => {
   for (const file of SWEPT_SOURCES) {
     const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
     const literal = source.match(BANNED_LITERAL);
     assert.equal(literal, null, `${file} still holds ${literal?.[0]}`);
-    assert.match(source, STATUS_TOKEN, `${file} draws no status token`);
+    if (!CSS_COLORED_SOURCES.has(file)) assert.match(source, STATUS_TOKEN, `${file} draws no status token`);
   }
 });
 
@@ -62,9 +67,11 @@ const { I18nProvider } = await jiti.import("@/hooks/useI18n");
 const { ChatInput, ModelErrorBanner } = await jiti.import("./ChatInput.tsx");
 const { TreeNode } = await jiti.import("./FileExplorer.tsx");
 const { statusColor } = await jiti.import("./AgentSessionPanel.tsx");
+const { ProjectTrustDialogView } = await jiti.import("./ProjectTrustDialog.tsx");
 const { mcpStatusDot } = await jiti.import("./mcp-config-helpers.ts");
 const { translateMessage } = await jiti.import("@/lib/i18n/format.ts");
 const { enLocale } = await jiti.import("@/lib/i18n/messages/en.ts");
+const settingsCss = readFileSync(new URL("../app/settings.css", import.meta.url), "utf8");
 
 function render(element) {
   return renderToStaticMarkup(React.createElement(I18nProvider, null, element));
@@ -123,4 +130,29 @@ test("the status helpers draw the theme's error and success tokens", () => {
   assert.equal(statusColor("completed"), "var(--success)");
   assert.equal(mcpStatusDot("error").color, "var(--error)");
   assert.equal(mcpStatusDot("warning").color, "var(--warning)");
+});
+
+test("the trust dialog's shield draws the warning token", () => {
+  const listing = {
+    state: "loaded",
+    listing: {
+      mcpFile: { scope: "project", path: "/hub/.pi/mcp.json", exists: true, problems: [] },
+      mcpServers: [],
+    },
+    status: { requiresTrust: true, trusted: false, decision: null, inherited: false },
+  };
+  const html = render(React.createElement(ProjectTrustDialogView, {
+    cwd: "/hub",
+    busy: false,
+    error: null,
+    listing,
+    onCancel() {},
+    onConfirm() {},
+  }));
+  assert.doesNotMatch(html, /#f59e0b/);
+  // The dialog keeps its layout in CSS (no inline styles), so the shield
+  // inherits the icon class' color.
+  assert.match(html, /stroke="currentColor"[^>]*class="project-trust-icon"/);
+  const rule = settingsCss.slice(settingsCss.indexOf(".project-trust-icon {"));
+  assert.match(rule.slice(0, rule.indexOf("}")), /color: var\(--warning\);/);
 });

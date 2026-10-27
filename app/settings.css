@@ -2383,6 +2383,7 @@ select.mcp-add-input {
 .project-trust-icon {
   flex-shrink: 0;
   margin-top: 1px;
+  color: var(--warning);
 }
 
 .project-trust-content {
