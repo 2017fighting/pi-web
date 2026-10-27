@@ -926,6 +926,15 @@ test("drops a questionnaire's envelope but keeps an error result's text", () => 
     // question was shown and left unanswered.
     assert.match(errorText, /Pick · 1 question · unanswered/);
     assert.match(errorText, /PickunansweredWhich one\?/);
+
+    // A thrown tool error carries no `details` at all. It is not a dismissal
+    // either, so the row says `unanswered` and the expanded body must mark the
+    // question too, not leave it looking answered.
+    const thrown = { ...answered, isError: true, content: [{ type: "text", text: "Error: tool threw" }], details: undefined };
+    const thrownText = textOf(renderMessage(message, { toolResults: new Map([[block.toolCallId, thrown]]) }));
+    assert.match(thrownText, /Error: tool threw/);
+    assert.match(thrownText, /Pick · 1 question · unanswered/);
+    assert.match(thrownText, /PickunansweredWhich one\?/);
   } finally {
     clearExpandedToolCalls();
   }

@@ -218,10 +218,12 @@ export function askUserQuestionBlocks(
 ): AskUserQuestionBlock[] {
   const details = result?.details;
   const answers = isRecord(details) && Array.isArray(details.answers) ? details.answers : [];
-  // A dismissal leaves every question unticked without calling it unanswered; an
-  // error is not a dismissal, so its blank questions read `unanswered` just as
-  // the collapsed row does.
-  const submitted = isRecord(details) && !isDeclinedResult(details);
+  // Any result that is not a dismissal is a submit, so its blank questions read
+  // `unanswered` just as the collapsed row does; a dismissal leaves every question
+  // unticked without calling it unanswered. The check is on the result, not on its
+  // `details`: a thrown tool error carries no `details` record at all, and it is not
+  // a dismissal either.
+  const submitted = result !== undefined && !isDeclinedResult(details);
   return questions.map((question, index) => {
     const answer = answers.find((entry) => isRecord(entry) && entry.questionIndex === index);
     if (!isRecord(answer)) {
