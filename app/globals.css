@@ -556,13 +556,9 @@ html.dark {
 .web-login-error {
   min-height: 17px;
   margin: 7px 4px 0;
-  color: #dc2626;
+  color: var(--error);
   font-size: 11px;
   line-height: 17px;
-}
-
-html.dark .web-login-error {
-  color: #f87171;
 }
 
 .web-login-form button {
@@ -682,9 +678,9 @@ html.dark .web-login-error {
   background: #facc15;
 }
 
-.terminal-status-dot.is-ready { background: #4ade80; }
+.terminal-status-dot.is-ready { background: var(--success); }
 .terminal-status-dot.is-exited,
-.terminal-status-dot.is-error { background: #f87171; }
+.terminal-status-dot.is-error { background: var(--error); }
 
 .terminal-panel-header button {
   display: inline-flex;

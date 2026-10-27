@@ -60,6 +60,28 @@ test("no swept surface keeps a status-color literal", () => {
   }
 });
 
+// Ticket #11 brought the stylesheets into the sweep: the settings panel, the
+// sidebar, the login page and the terminal status dot drew the same literals in
+// CSS. A palette block defines the tokens themselves (`--success: #4ade80`), and
+// the terminal's own `--terminal-*` tokens are concrete colors by design; only a
+// *use* of a status literal is banned, so the definitions are dropped first.
+const SWEPT_STYLESHEETS = [
+  "app/settings.css",
+  "app/sidebar.css",
+  "app/globals.css",
+  "demo/app/settings.css",
+  "demo/app/globals.css",
+];
+
+test("no swept stylesheet keeps a status-color literal", () => {
+  for (const file of SWEPT_STYLESHEETS) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
+      .replace(/--[\w-]+\s*:[^;]+;/g, "");
+    const literal = source.match(BANNED_LITERAL);
+    assert.equal(literal, null, `${file} still holds ${literal?.[0]}`);
+  }
+});
+
 const jiti = createJiti(import.meta.url, { tsconfigPaths: true, jsx: { runtime: "automatic" } });
 const React = await jiti.import("react");
 const { renderToStaticMarkup } = await jiti.import("react-dom/server");
