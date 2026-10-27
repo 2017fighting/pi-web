@@ -1039,9 +1039,9 @@ function ModelDetail({
           <SectionTitle>{t("i18n.model")}</SectionTitle>
         </ConfigDetailHeaderInfo>
         <ConfigDetailActions>
-          {/* A light chip with dark text in both schemes: the status fill is
-              mixed into the panel background and the text is the theme's own,
-              so the pair stays readable on a dark surface too. */}
+          {/* The test chip's tint is the status token mixed into the panel
+              background, and its text is the theme's own, so the pair stays
+              readable in either scheme. */}
           {testSummary && (
             <span
               title={testSummary}

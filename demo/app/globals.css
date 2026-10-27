@@ -340,6 +340,10 @@ body {
 }
 
 .terminal-panel {
+  /* The demo's terminal keeps the app's dark surface in every theme; its status
+     dot reads the terminal's own tokens, not the app theme's. */
+  --terminal-success: #4ade80;
+  --terminal-error: #f87171;
   display: grid;
   grid-template-rows: 38px auto minmax(0, 1fr);
   width: 100%;
@@ -383,9 +387,9 @@ body {
   background: #facc15;
 }
 
-.terminal-status-dot.is-ready { background: var(--success); }
+.terminal-status-dot.is-ready { background: var(--terminal-success); }
 .terminal-status-dot.is-exited,
-.terminal-status-dot.is-error { background: var(--error); }
+.terminal-status-dot.is-error { background: var(--terminal-error); }
 
 .terminal-panel-header button {
   display: inline-flex;

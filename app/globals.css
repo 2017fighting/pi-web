@@ -606,6 +606,8 @@ html.dark {
   --terminal-strong: #e5e7eb;
   --terminal-key: #d7dce5;
   --terminal-accent: #60a5fa;
+  --terminal-success: #4ade80;
+  --terminal-error: #f87171;
   --terminal-error-border: #5f2424;
   --terminal-error-bg: #321b1b;
   --terminal-error-text: #fca5a5;
@@ -630,6 +632,8 @@ html.dark {
   --terminal-strong: #111827;
   --terminal-key: #1f2937;
   --terminal-accent: #2563eb;
+  --terminal-success: #16a34a;
+  --terminal-error: #dc2626;
   --terminal-error-border: #fecaca;
   --terminal-error-bg: #fef2f2;
   --terminal-error-text: #b91c1c;
@@ -678,9 +682,9 @@ html.dark {
   background: #facc15;
 }
 
-.terminal-status-dot.is-ready { background: var(--success); }
+.terminal-status-dot.is-ready { background: var(--terminal-success); }
 .terminal-status-dot.is-exited,
-.terminal-status-dot.is-error { background: var(--error); }
+.terminal-status-dot.is-error { background: var(--terminal-error); }
 
 .terminal-panel-header button {
   display: inline-flex;
