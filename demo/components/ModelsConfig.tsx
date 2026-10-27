@@ -1039,6 +1039,9 @@ function ModelDetail({
           <SectionTitle>{t("i18n.model")}</SectionTitle>
         </ConfigDetailHeaderInfo>
         <ConfigDetailActions>
+          {/* A light chip with dark text in both schemes: the status fill is
+              mixed into the panel background and the text is the theme's own,
+              so the pair stays readable on a dark surface too. */}
           {testSummary && (
             <span
               title={testSummary}
@@ -1048,8 +1051,8 @@ function ModelDetail({
                 padding: "0 8px",
                 border: `1px solid ${testState.phase === "error" ? "color-mix(in srgb, var(--error) 40%, transparent)" : testState.phase === "success" ? "color-mix(in srgb, var(--success) 40%, transparent)" : "var(--border)"}`,
                 borderRadius: 4,
-                background: testState.phase === "error" ? "#fee2e2" : testState.phase === "success" ? "#dcfce7" : "#e5e7eb",
-                color: "#111827",
+                background: testState.phase === "error" ? "color-mix(in srgb, var(--error) 18%, var(--bg-panel))" : testState.phase === "success" ? "color-mix(in srgb, var(--success) 18%, var(--bg-panel))" : "var(--bg-panel)",
+                color: "var(--text)",
                 fontSize: 11,
                 display: "inline-flex",
                 alignItems: "center",
