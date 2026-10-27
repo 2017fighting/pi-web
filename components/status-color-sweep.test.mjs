@@ -8,6 +8,10 @@ import { createJiti } from "jiti";
 // `color-mix()` over them) instead; ticket #11 finished the sweep. The grep
 // pins every one of them; the renders below pin what a reader sees on the
 // surfaces a test can mount.
+//
+// `demo/components/TerminalPanel.tsx` is not listed: its xterm `ITheme` needs
+// concrete colors and belongs to the terminal's own light/dark choice, apart
+// from the app theme (the app keeps the same palette in `lib/terminal-theme.ts`).
 const SWEPT_SOURCES = [
   "components/ChatWindow.tsx",
   "components/AppShell.tsx",
