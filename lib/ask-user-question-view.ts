@@ -327,18 +327,3 @@ export function askUserQuestionBlocks(
     };
   });
 }
-
-/**
- * The collapsed card's one line: the first question's header chip, how many
- * questions the call carried, and where the call stands. The run time is the
- * card's own slot, not this text's. The view draws the header apart through
- * `askUserQuestionSummaryParts()`; this is the same summary as one string.
- */
-export function askUserQuestionSummary(
-  questions: readonly AskUserQuestionQuestion[],
-  state: AskUserQuestionState,
-  t: Translate,
-): string {
-  const { header, detail } = askUserQuestionSummaryParts(questions, state, t);
-  return [header, detail].filter((part) => part).join(" · ");
-}
