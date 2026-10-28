@@ -15,7 +15,7 @@ import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatc
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor } from "@/lib/status-colors";
-import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
+import { askUserQuestionBlocks, askUserQuestionFailed, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
@@ -1182,7 +1182,11 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   const resultImages = getMessageImages(result?.content ?? []);
   const resultIsEmpty = resultText === null ? false : (resultText.trim() === "(no output)" || resultText.trim() === "");
   const isError = (result?.isError ?? false)
-    || (isApplyPatchToolName(block.toolName) && applyPatchResultHasFailures(result?.details));
+    || (isApplyPatchToolName(block.toolName) && applyPatchResultHasFailures(result?.details))
+    // The extension writes its own `error` for a questionnaire it never showed
+    // ("UI not available", "this client cannot render the questionnaire") without
+    // pi flagging the call, so the card is a failure even though `isError` is false.
+    || (questionnaire !== null && askUserQuestionFailed(result));
   const subagent = isSubagentToolDetails(result?.details) ? result.details : null;
 
   return (

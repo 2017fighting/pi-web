@@ -14,7 +14,7 @@ import { formatTurnDuration } from "@/lib/turn-duration";
 import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, type SplitDiffFile, type SplitDiffGap, type UnifiedDiffLine } from "@/lib/patch";
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
-import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
+import { askUserQuestionBlocks, askUserQuestionFailed, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
@@ -1269,7 +1269,11 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   const resultImages = getMessageImages(resultContent);
   const resultIsEmpty = resultText === null ? false : (resultText.trim() === "(no output)" || resultText.trim() === "");
   const isError = (result?.isError ?? false)
-    || (isApplyPatchToolName(block.toolName) && applyPatchResultHasFailures(result?.details));
+    || (isApplyPatchToolName(block.toolName) && applyPatchResultHasFailures(result?.details))
+    // The extension writes its own `error` for a questionnaire it never showed
+    // ("UI not available", "this client cannot render the questionnaire") without
+    // pi flagging the call, so the card is a failure even though `isError` is false.
+    || (questionnaire !== null && askUserQuestionFailed(result));
   const subagent = isSubagentToolDetails(result?.details) ? result.details : null;
   const codemodeCallCount = codemode ? codemode.calls.length + codemode.omitted : 0;
 

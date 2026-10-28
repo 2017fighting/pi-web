@@ -147,3 +147,44 @@ test("the generic tool card draws its status chrome from the theme tokens", (t) 
   assert.match(error, /var\(--error\)/);
   for (const literal of [/rgba\(248,113,113/, /#f87171/]) assert.doesNotMatch(error, literal);
 });
+
+test("a questionnaire the extension never showed draws the error chrome, not the success one", () => {
+  // The extension answers a host that cannot render a questionnaire with
+  // `cancelled: true`, an empty answers list and its own `error`, and pi does not
+  // flag the call — so the card has to read the failure itself, or "UI not
+  // available" sits in a card that looks like a successful exchange.
+  const call = {
+    type: "toolCall",
+    toolCallId: "call-questionnaire-status",
+    toolName: "ask_user_question",
+    input: { questions: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }] }] },
+  };
+  const message = { role: "assistant", provider: "anthropic", model: "claude-test", content: [call] };
+  const result = (details, text) => ({
+    role: "toolResult",
+    toolCallId: call.toolCallId,
+    content: [{ type: "text", text }],
+    details,
+  });
+
+  const shown = render(React.createElement(MessageView, {
+    message,
+    toolResults: new Map([[call.toolCallId, result(
+      { answers: [{ questionIndex: 0, question: "Which one?", kind: "option", answer: "A" }], cancelled: false },
+      'User has answered your questions: "Which one?"="A". You can now continue with the user\'s answers in mind.',
+    )]]),
+  }));
+  assert.match(shown, /var\(--success\)/);
+  assert.doesNotMatch(shown, /var\(--error\)/);
+
+  const unrenderable = render(React.createElement(MessageView, {
+    message,
+    toolResults: new Map([[call.toolCallId, result(
+      { answers: [], cancelled: true, error: "no_ui" },
+      "Error: UI not available (running in non-interactive mode)",
+    )]]),
+  }));
+  // The card's own edge and name carry the failure, not just the text below it.
+  assert.match(unrenderable, /border:1px solid color-mix\(in srgb, var\(--error\) 45%/);
+  assert.match(unrenderable, /color:var\(--error\);font-family:var\(--font-mono\)/);
+});

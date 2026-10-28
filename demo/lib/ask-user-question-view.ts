@@ -192,6 +192,16 @@ export function askUserQuestionState(
 }
 
 /**
+ * Whether the questionnaire's result is a failure, so the card draws its error
+ * chrome: pi flagged the call (`isError`), or the extension wrote its own `error`
+ * — `no_ui`, `no_custom_ui` and the argument failures, which it raises before the
+ * first question is shown. That text is the whole message, so the card keeps it.
+ */
+export function askUserQuestionFailed(result: { details?: unknown; isError?: boolean } | undefined): boolean {
+  return result !== undefined && isErrorResult(result);
+}
+
+/**
  * Whether the result's text is the answer the card already carries, so the card
  * drops it: the envelope's `"question"="answer"` pairs are exactly what the
  * summary shows. An error's text is the whole message and a result with no
