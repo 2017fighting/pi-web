@@ -26,10 +26,10 @@ import { CodemodeCallList } from "./CodemodeToolView";
 import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { mcpToolLabel, prettyMcpResultText } from "@/lib/mcp-tool-display";
-import { statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor } from "@/lib/status-colors";
+import { STATUS_WARNING_COLOR, statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor } from "@/lib/status-colors";
 import { streamRateKey, streamRateStart, streamTokensPerSecond, type StreamRateStart } from "@/lib/stream-token-rate";
 import { getTranscriptNotices } from "@/lib/transcript-notices";
-import { TRANSCRIPT_NOTICE_WARNING_COLOR, transcriptNoticeText } from "@/components/TranscriptNotices";
+import { transcriptNoticeText } from "@/components/TranscriptNotices";
 import type {
   AgentMessage,
   UserMessage,
@@ -1944,7 +1944,7 @@ function CompactionMessageView({ message }: { message: CustomMessage }) {
                 </span>
               )}
               {costNotice && (
-                <span style={{ display: "block", marginTop: 2, color: TRANSCRIPT_NOTICE_WARNING_COLOR, fontSize: "calc(12px + var(--chat-font-size-offset, 0px))", lineHeight: 1.5 }}>
+                <span style={{ display: "block", marginTop: 2, color: STATUS_WARNING_COLOR, fontSize: "calc(12px + var(--chat-font-size-offset, 0px))", lineHeight: 1.5 }}>
                   {transcriptNoticeText(t, costNotice)}
                 </span>
               )}

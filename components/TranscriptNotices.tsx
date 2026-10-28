@@ -12,9 +12,6 @@ import {
   type TranscriptNotice,
 } from "@/lib/transcript-notices";
 
-// pi's TUI draws these lines in its warning color, cache warming dim (#1265).
-export const TRANSCRIPT_NOTICE_WARNING_COLOR = STATUS_WARNING_COLOR;
-
 function costSuffix(t: Translate, cost: number): string {
   const formatted = formatNoticeCost(cost);
   return formatted ? t("transcriptNotice.costSuffix", { cost: formatted }) : "";
@@ -53,6 +50,7 @@ export function cacheMissSummaryText(t: Translate, summary: CacheMissSummary): s
   return t(summary.count === 1 ? "transcriptNotice.foldCacheMiss" : "transcriptNotice.foldCacheMisses", params);
 }
 
+// pi's TUI draws these lines in its warning color, cache warming dim (#1265).
 /** One line per notice, under the message they follow. A compaction's cost is drawn in its card. */
 export const TranscriptNoticeLines = memo(function TranscriptNoticeLines({ notices }: { notices: readonly TranscriptNotice[] }) {
   const { t } = useI18n();
@@ -71,7 +69,7 @@ export const TranscriptNoticeLines = memo(function TranscriptNoticeLines({ notic
               gap: 6,
               fontSize: 12,
               lineHeight: 1.5,
-              color: warning ? TRANSCRIPT_NOTICE_WARNING_COLOR : "var(--text-dim)",
+              color: warning ? STATUS_WARNING_COLOR : "var(--text-dim)",
               overflowWrap: "anywhere",
             }}
           >
