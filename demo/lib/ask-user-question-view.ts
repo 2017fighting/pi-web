@@ -242,7 +242,10 @@ export interface AskUserQuestionBlock {
   custom: string | null;
   /** The note the user attached to this question; null when none. */
   note: string | null;
-  /** A non-cancelled result came back with nothing for this question. */
+  /**
+   * A non-cancelled result came back with nothing for this question: no entry at
+   * all, or an entry that names no choice — no label and no typed text.
+   */
   unanswered: boolean;
   /** The chosen single-select option's preview Markdown; null when the answer has none. */
   preview: string | null;
@@ -263,12 +266,14 @@ function chosenPreview(label: string | undefined, question: AskUserQuestionQuest
  * The questionnaire the expanded card draws: one block per question, each with
  * the labels to tick and the text and note to show. Answers are matched to
  * questions by `questionIndex`, and a question with no answer reads `unanswered`
- * unless the result is a dismissal, so a partial submit is legible while a
- * decline is not dressed up as one. An error's answers are not what the user
- * chose — the collapsed row reads its slot `unanswered` — so its questions read
- * the same way rather than ticking a label nobody was shown. A block also
- * carries the chosen option's preview, so the card can show the artifact that
- * option offered.
+ * unless the result is a dismissal — no entry for it, or an entry that names no
+ * choice, which is the blank the collapsed row's answer slot reads `unanswered`
+ * for — so a partial submit is legible while a decline is not dressed up as one,
+ * and the row and the body cannot disagree about the same result. An error's
+ * answers are not what the user chose — the collapsed row reads its slot
+ * `unanswered` — so its questions read the same way rather than ticking a label
+ * nobody was shown. A block also carries the chosen option's preview, so the card
+ * can show the artifact that option offered.
  */
 export function askUserQuestionBlocks(
   questions: readonly AskUserQuestionQuestion[],
@@ -294,7 +299,10 @@ export function askUserQuestionBlocks(
       selected: choice.labels,
       custom: choice.custom,
       note: typeof answer.notes === "string" && answer.notes ? answer.notes : null,
-      unanswered: false,
+      // An entry that names no choice — no label ticked and nothing typed — is the
+      // blank the collapsed row's answer slot reads `unanswered` for, so the body
+      // says the same rather than drawing an unticked list that looks answered.
+      unanswered: submitted && choice.labels.length === 0 && choice.custom === null,
       preview: chosenPreview(answer.kind === "option" ? choice.labels[0] : undefined, question),
     };
   });

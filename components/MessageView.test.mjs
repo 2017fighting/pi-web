@@ -1111,6 +1111,27 @@ test("marks a question left blank on a partial submit as unanswered", (t) => {
   assert.match(text, /Storage[\s\S]*?unanswered/);
 });
 
+test("marks a question whose answer entry names no choice unanswered, as its row reads", (t) => {
+  const block = questionnaireCall("call-ask-user-question-blank-entry", [
+    { question: "Which auth method?", header: "Auth", options: [{ label: "OAuth", description: "" }, { label: "API key", description: "" }] },
+  ]);
+  // An entry exists for the question but names nothing: no label, no typed text.
+  const result = questionnaireResult(
+    block,
+    { cancelled: false, answers: [{ questionIndex: 0, kind: "option", answer: "" }] },
+    'User has answered your questions: "Which auth method?"="".',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, result));
+  // The collapsed row reads `unanswered`, and the expanded body marks the question
+  // with it rather than drawing a list nobody ticked as though it were an answer.
+  assert.match(text, /Auth · 1 question · unanswered/);
+  assert.match(text, /AuthunansweredWhich auth method\?/);
+  assert.match(text, /○OAuth/);
+  assert.doesNotMatch(text, /✓/);
+});
+
 test("keeps the generic JSON view for an ask_user_question call whose questions are malformed", (t) => {
   const block = questionnaireCall("call-ask-user-question-malformed", [{ question: "Which one?" }]);
   setToolCallExpanded(block.toolCallId, true);
