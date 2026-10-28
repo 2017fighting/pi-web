@@ -70,7 +70,9 @@ function questionOf(value: unknown): AskUserQuestionQuestion | null {
 /**
  * The questions this tool call carried, or `null` when it is not a questionnaire
  * call: another name, arguments that are not a well-formed questions list, or
- * arguments still streaming in.
+ * arguments still streaming in. An empty list is well-formed — the extension's
+ * `no_questions` failure — and reads as a card with no questions and its error
+ * text below it, rather than as the generic view.
  */
 export function parseAskUserQuestion(call: { toolName: string; input: unknown; rawInput?: string }): AskUserQuestionQuestion[] | null {
   if (call.toolName !== ASK_USER_QUESTION_TOOL_NAME) return null;
@@ -83,7 +85,7 @@ export function parseAskUserQuestion(call: { toolName: string; input: unknown; r
     if (!parsed) return null;
     questions.push(parsed);
   }
-  return questions.length > 0 ? questions : null;
+  return questions;
 }
 
 /** What one answer reads as: the labels it picked, and the text typed alongside them. */
@@ -122,6 +124,16 @@ function isDeclinedResult(details: unknown): boolean {
 }
 
 /**
+ * Whether the result is a failure rather than an answer: a tool call pi threw
+ * (`isError`), or the extension's own `error` field, which it writes when it
+ * never showed the questionnaire. Either way the answer slot reads `unanswered`
+ * and the result's text is the whole message, so the card keeps it.
+ */
+function isErrorResult(result: { details?: unknown; isError?: boolean }): boolean {
+  return result.isError === true || (isRecord(result.details) && result.details.error !== undefined);
+}
+
+/**
  * Where the call stands. A result that came back is `answered` — its `label` is
  * what the first question got, `null` when it was left blank or when the result
  * is an error — or `declined` when the user dismissed the questionnaire. With no
@@ -134,7 +146,7 @@ function isDeclinedResult(details: unknown): boolean {
  * arrives, so a streaming-only flag would read `unfinished` throughout the wait.
  */
 export function askUserQuestionState(
-  result: { details?: unknown } | undefined,
+  result: { details?: unknown; isError?: boolean } | undefined,
   isLive: boolean,
 ): AskUserQuestionState {
   if (!result) return isLive ? { kind: "waiting" } : { kind: "unfinished" };
@@ -144,6 +156,10 @@ export function askUserQuestionState(
   // not one, and falls through to `answered` with no label, which reads
   // `unanswered` (`isDeclinedResult`).
   if (isDeclinedResult(details)) return { kind: "declined" };
+
+  // An error's answer slot reads `unanswered`, whatever answers it carries: the
+  // result is a failure, not what the user chose, and its text stays below the card.
+  if (isErrorResult(result)) return { kind: "answered", label: null };
 
   const first = isRecord(details) && Array.isArray(details.answers)
     ? details.answers.find((answer) => isRecord(answer) && answer.questionIndex === 0)
@@ -158,13 +174,11 @@ export function askUserQuestionState(
  * answers list says something the card does not, so both keep theirs.
  */
 export function askUserQuestionHidesResult(result: { details?: unknown; isError?: boolean } | undefined): boolean {
-  if (!result || result.isError === true) return false;
-  const details = result.details;
+  if (!result || isErrorResult(result)) return false;
   // The extension answers a host that cannot render the questionnaire with
   // `answers: []` and an `error` ("UI not available", "this client cannot
   // render the questionnaire"): that text is the message, not a duplicate.
-  if (!isRecord(details) || details.error !== undefined) return false;
-  return Array.isArray(details.answers);
+  return isRecord(result.details) && Array.isArray(result.details.answers);
 }
 
 /** The key each settled-or-not state reads by, apart from `answered`'s own label. */

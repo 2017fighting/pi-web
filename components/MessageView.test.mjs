@@ -1119,6 +1119,37 @@ test("keeps the generic JSON view for an ask_user_question call whose questions 
   assert.doesNotMatch(text, /multi-select/);
 });
 
+test("reads an empty questions list as the no-questions failure, keeping its error text", (t) => {
+  const block = questionnaireCall("call-ask-user-question-none", []);
+  const result = questionnaireResult(
+    block,
+    { answers: [], cancelled: true, error: "no_questions" },
+    "Error: no_questions",
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, result));
+  // The card reads the exchange, not `[object Object]` or the raw arguments.
+  assert.match(text, /ask_user_question/);
+  assert.match(text, /0 questions · unanswered/);
+  assert.doesNotMatch(text, /\[object Object\]/);
+  // The error is not a dismissal, so the text is the message and stays visible.
+  assert.match(text, /no_questions/);
+});
+
+test("reads the answer slot unanswered when an error result carries an answer", (t) => {
+  const block = questionnaireCall("call-ask-user-question-error", [
+    { question: "Which one?", header: "Pick", options: [{ label: "A" }, { label: "B" }] },
+  ]);
+  // A thrown tool error is not a dismissal, so it must not show a choice the user never made.
+  const thrown = { ...questionnaireResult(block, undefined, "Error: tool threw"), isError: true, details: undefined };
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, thrown));
+  assert.match(text, /Pick · 1 question · unanswered/);
+  assert.match(text, /Error: tool threw/);
+});
+
 test("labels an MCP call server/tool and indents a JSON result", (t) => {
   const block = {
     type: "toolCall",
