@@ -112,13 +112,24 @@ function answerLabel(answer: Record<string, unknown>): string | null {
 }
 
 /**
+ * The extension's own `error` field, or null when the result carries none. A
+ * nullish value is no error: only a value the extension wrote is one, and it
+ * writes `cancelled: true` with no `error` for a user dismissal.
+ */
+function resultError(details: unknown): unknown {
+  if (!isRecord(details)) return null;
+  const error = details.error;
+  return error === undefined || error === null ? null : error;
+}
+
+/**
  * Whether the result is a dismissal — the user closed the questionnaire without
  * answering. A cancelled result that carries an `error` is not one: a host that
  * cannot render the questionnaire answers with `cancelled` and an `error`, and
  * the user never saw the questions.
  */
 function isDeclinedResult(details: unknown): boolean {
-  return isRecord(details) && details.cancelled === true && details.error === undefined;
+  return isRecord(details) && details.cancelled === true && resultError(details) === null;
 }
 
 /**
@@ -128,7 +139,7 @@ function isDeclinedResult(details: unknown): boolean {
  * and the result's text is the whole message, so the card keeps it.
  */
 function isErrorResult(result: { details?: unknown; isError?: boolean }): boolean {
-  return result.isError === true || (isRecord(result.details) && result.details.error !== undefined);
+  return result.isError === true || resultError(result.details) !== null;
 }
 
 /**
