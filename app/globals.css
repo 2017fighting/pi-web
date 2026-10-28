@@ -45,10 +45,10 @@
   --assistant-bg: #ffffff;
   --tool-bg: #f9fafb;
   --bg-subtle: rgba(0,0,0,0.03);
-  /* The thinking glyph's amber is not a status colour and does not follow the
-     app theme; one pair serves every palette. */
-  --thinking-stroke: #d4a017;
-  --thinking-accent: #facc15;
+  /* The thinking glyph's amber is not a status colour; its own names draw from
+     the palette's warning token, so the palette gains no new colour. */
+  --thinking-stroke: color-mix(in srgb, var(--warning) 80%, black);
+  --thinking-accent: var(--warning);
   --chat-content-max-width: 820px;
   --chat-content-font-size: 14px;
 }

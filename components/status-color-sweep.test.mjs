@@ -6,8 +6,10 @@ import { createJiti } from "jiti";
 // Ticket #10 swept the status-color literals out of the surfaces below,
 // drawing `var(--error)` / `var(--success)` / `var(--warning)` (or a
 // `color-mix()` over them) instead; ticket #11 finished the sweep, and ticket
-// #14 the surfaces those two did not list. The grep pins every one of them;
-// the renders below pin what a reader sees on the surfaces a test can mount.
+// #14 the surfaces those two did not list. Ticket #14 also pins the two
+// non-status surfaces it swept: the terminal dot's `--terminal-warning` and the
+// thinking glyph's `--thinking-*` pair. The grep pins every one of them; the
+// renders below pin what a reader sees on the surfaces a test can mount.
 //
 // `demo/components/TerminalPanel.tsx` is not listed: its xterm `ITheme` needs
 // concrete colors and belongs to the terminal's own light/dark choice, apart
@@ -218,13 +220,15 @@ test("the thinking glyph draws its own amber tokens", () => {
   assert.doesNotMatch(idle, /var\(--thinking-stroke\)/);
 });
 
-// The thinking amber does not follow the app theme, so the pair is defined once
-// on `:root`; a light and a dark page both inherit it.
-test("the thinking tokens are defined once, for every theme", () => {
+// The thinking glyph's amber is drawn from the palette's warning token, so it
+// follows the theme without adding a colour; the pair sits on the root block
+// every theme shares.
+test("the thinking tokens draw from the palette's warning token, for every theme", () => {
   for (const file of ["app/globals.css", "demo/app/globals.css"]) {
     const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
-    assert.match(source, /--thinking-stroke: #d4a017;/, `${file} defines the thinking stroke`);
-    assert.match(source, /--thinking-accent: #facc15;/, `${file} defines the thinking accent`);
+    const root = ruleBody(source, ":root,\n[data-theme=\"light\"] {");
+    assert.match(root, /--thinking-stroke: color-mix\(in srgb, var\(--warning\) [^;]+;/, `${file} defines the thinking stroke`);
+    assert.match(root, /--thinking-accent: var\(--warning\);/, `${file} defines the thinking accent`);
   }
 });
 

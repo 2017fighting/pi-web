@@ -1,5 +1,5 @@
 // The glyph's amber is not a status colour: it has its own `--thinking-*`
-// token pair in app/globals.css, defined once for every theme.
+// token pair, drawn from the palette's warning token.
 export function ThinkingIcon({ active, size = 14 }: { active: boolean; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
