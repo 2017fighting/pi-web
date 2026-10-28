@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useLayoutEffect, useRef } from "react";
 import { useI18n } from "@/hooks/useI18n";
+import type { Translate } from "@/lib/i18n/types";
 import type {
   SkillContentResponse,
   SkillInfo as Skill,
@@ -49,7 +50,6 @@ import { itemsToSwitch, projectTrustReloadKey } from "./settings-ui-helpers";
 import { MarkdownBody } from "./MarkdownBody";
 
 type SkillScope = "global" | "project" | "path";
-type Translate = ReturnType<typeof useI18n>["t"];
 
 function sourceLabel(skill: Skill): SkillScope {
   const src = skill.sourceInfo?.source;

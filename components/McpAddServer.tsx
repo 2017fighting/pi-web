@@ -4,6 +4,7 @@ import { useId, useMemo } from "react";
 import type { McpServerConfig } from "@earendil-works/pi-coding-agent";
 import type { McpResponse, McpScope } from "@/lib/api-types";
 import { useI18n } from "@/hooks/useI18n";
+import type { Translate } from "@/lib/i18n/types";
 import { shortenPath } from "@/lib/display-path";
 import type { McpImportField, McpImportNote } from "@/lib/mcp-import";
 import { isReferenceOnly } from "@/lib/mcp-secrets";
@@ -41,7 +42,6 @@ import {
 } from "./mcp-add-helpers";
 import type { McpActionFailure, McpActionRequest } from "./mcp-config-helpers";
 
-type Translate = ReturnType<typeof useI18n>["t"];
 export type McpAddActionRequest = Extract<McpActionRequest, { action: "add" }>;
 
 function displayPath(path: string): string {

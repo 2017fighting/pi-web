@@ -1,5 +1,4 @@
 import type { McpExposure, McpServerConfig } from "@earendil-works/pi-coding-agent";
-import type { Translate } from "@/lib/i18n/types";
 import type {
   FreshFolderTrustBreadth,
   McpConfigFieldRef,
@@ -8,6 +7,7 @@ import type {
   McpScope,
   McpVariableReference,
 } from "@/lib/api-types";
+import type { Translate } from "@/lib/i18n/types";
 import {
   configValueEnvVarNames,
   fillMcpImportFields,

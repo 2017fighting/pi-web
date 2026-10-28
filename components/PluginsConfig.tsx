@@ -11,6 +11,7 @@ import type {
   ProjectTrustStatus,
 } from "@/lib/api-types";
 import { useI18n } from "@/hooks/useI18n";
+import type { Translate } from "@/lib/i18n/types";
 import { shortenPath } from "@/lib/display-path";
 import {
   getLastSettingsSelection,
@@ -52,7 +53,6 @@ import { STATUS_ERROR_COLOR } from "@/lib/status-colors";
 
 type PluginScope = PluginPackageInfo["scope"];
 type PluginAction = "install" | "remove" | "update" | "disable" | "enable";
-type Translate = ReturnType<typeof useI18n>["t"];
 
 const PLUGIN_SOURCE_EXAMPLES = ["npm:@scope/pi-plugin", "git:https://github.com/user/repo", "/absolute/path/to/plugin"];
 

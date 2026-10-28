@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { McpServerInfo, McpSignInFlowInfo } from "@/lib/api-types";
 import { useI18n } from "@/hooks/useI18n";
+import type { Translate } from "@/lib/i18n/types";
 import { revealHiddenCharacters } from "@/lib/mcp-server-display";
 import { focusIfLost } from "@/lib/stacked-dialog";
 import { OAuthPastePanel } from "./OAuthPastePanel";
@@ -19,8 +20,6 @@ import {
   mcpSignInShared,
   type McpSignInRun,
 } from "./mcp-sign-in-helpers";
-
-type Translate = ReturnType<typeof useI18n>["t"];
 
 /**
  * Why a sign-in request or Sign out failed, in sign-in words where the reason

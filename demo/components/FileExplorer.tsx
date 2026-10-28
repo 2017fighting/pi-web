@@ -15,7 +15,7 @@ import type { GitFileStatus, GitFileStatusKind, GitStatusResponse } from "@/lib/
 import type { FileIndexEntry } from "@/lib/file-fuzzy";
 import { buildSearchTree, type SearchTreeNode } from "@/lib/search-tree";
 import { useI18n } from "@/hooks/useI18n";
-type Translate = ReturnType<typeof useI18n>["t"];
+import type { Translate } from "@/lib/i18n/types";
 
 interface FileEntry {
   name: string;

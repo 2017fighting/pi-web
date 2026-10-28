@@ -19,7 +19,7 @@ import type { FileTreeHiddenReason } from "@/lib/file-tree-visibility";
 import { createExpandedPathsMemory } from "@/lib/file-tree-expansion";
 import { droppedItems } from "@/hooks/useDragDrop";
 import { useI18n } from "@/hooks/useI18n";
-type Translate = ReturnType<typeof useI18n>["t"];
+import type { Translate } from "@/lib/i18n/types";
 
 /** Why a listed entry is normally left out; only listings with `hidden=1` report it. */
 type HiddenReason = Exclude<FileTreeHiddenReason, "always">;
