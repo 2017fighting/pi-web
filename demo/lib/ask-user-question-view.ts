@@ -98,12 +98,22 @@ interface AnswerChoice {
 }
 
 /**
+ * The option a label names, or `undefined` when the question offers no such
+ * choice. The one lookup both readers below take: the row's answer slot, the
+ * body's ticks and the chosen option's preview all read a label through it, so
+ * "the question offers this label" cannot be spelled two ways.
+ */
+function optionFor(question: AskUserQuestionQuestion | undefined, label: string): AskUserQuestionOption | undefined {
+  return question?.options.find((option) => option.label === label);
+}
+
+/**
  * What one answer reads as, whatever its `kind`, in the shape every reader below
  * takes. `question` is the one the entry answers — the source of the labels it
  * could have named — and an entry read without one names no label at all.
  */
 function readAnswer(answer: Record<string, unknown>, question: AskUserQuestionQuestion | undefined): AnswerChoice {
-  const offered = (label: string) => question !== undefined && question.options.some((option) => option.label === label);
+  const offered = (label: string) => optionFor(question, label) !== undefined;
   if (answer.kind === "multi") {
     const labels = Array.isArray(answer.selected)
       ? answer.selected.filter((label): label is string => typeof label === "string" && label.length > 0 && offered(label))
@@ -294,8 +304,7 @@ export interface AskUserQuestionBlock {
  */
 function chosenPreview(label: string | undefined, question: AskUserQuestionQuestion): string | null {
   if (label === undefined) return null;
-  const chosen = question.options.find((option) => option.label === label);
-  return chosen?.preview || null;
+  return optionFor(question, label)?.preview || null;
 }
 
 /**
