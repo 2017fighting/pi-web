@@ -22,9 +22,14 @@ export function statusTextColor(isError: boolean): string {
   return isError ? STATUS_ERROR_COLOR : STATUS_SUCCESS_COLOR;
 }
 
+/** A translucent wash of one status token: a border, a card's fill. */
+function statusWash(token: "--success" | "--error", percent: number): string {
+  return `color-mix(in srgb, var(${token}) ${percent}%, transparent)`;
+}
+
 /** One status line: the token, and how much of it the border carries. */
 function statusBorderLine(token: "--success" | "--error", percent: number): string {
-  return `1px solid color-mix(in srgb, var(${token}) ${percent}%, transparent)`;
+  return `1px solid ${statusWash(token, percent)}`;
 }
 
 /** The card's outer edge: the strongest status line. */
@@ -34,9 +39,7 @@ export function statusCardBorder(isError: boolean): string {
 
 /** The card's fill, a faint wash of the same token its border carries. */
 export function statusCardBackground(isError: boolean): string {
-  return isError
-    ? "color-mix(in srgb, var(--error) 5%, transparent)"
-    : "color-mix(in srgb, var(--success) 4%, transparent)";
+  return statusWash(isError ? "--error" : "--success", isError ? 5 : 4);
 }
 
 /** An inner separator between the card's header, body and result. */
