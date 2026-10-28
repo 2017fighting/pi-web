@@ -14,7 +14,7 @@ import { formatTurnDuration } from "@/lib/turn-duration";
 import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, type SplitDiffFile, type SplitDiffGap, type UnifiedDiffLine } from "@/lib/patch";
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
-import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummary, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
+import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
@@ -23,7 +23,7 @@ import { skillExpansionToCommand } from "@/lib/slash-display";
 import type { SubagentToolDetails } from "@/lib/subagent-extension";
 import { CODEMODE_TOOL_NAME, codemodeCalls, codemodeScript, codemodeScriptPreview, stripCodemodeHeader } from "@/lib/codemode-view";
 import { CodemodeCallList } from "./CodemodeToolView";
-import { AskUserQuestionView } from "./AskUserQuestionView";
+import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { mcpToolLabel, prettyMcpResultText } from "@/lib/mcp-tool-display";
 import { statusCardBorder, statusResultBorder, statusSeparatorBorder } from "@/lib/status-colors";
@@ -1270,13 +1270,18 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   const subagent = isSubagentToolDetails(result?.details) ? result.details : null;
   const codemodeCallCount = codemode ? codemode.calls.length + codemode.omitted : 0;
 
+  // The questionnaire's summary keeps its first part apart, because the row draws
+  // it as the header chip the call carried rather than as flat text.
+  const questionSummary = questionnaire && questionState ? askUserQuestionSummaryParts(questionnaire, questionState, t) : null;
+
   // The one line beside the tool's name, from the card's own view when it has
   // one: an applied patch's files, a script's first line, a questionnaire's
   // summary of the exchange.
-  const cardPreview = patchLabel
-    ?? (codemode ? codemodeScriptPreview(codemode.code) : null)
-    ?? (questionnaire && questionState ? askUserQuestionSummary(questionnaire, questionState, t) : null)
-    ?? getToolPreview(block);
+  const cardPreview = questionSummary !== null
+    ? null
+    : patchLabel
+      ?? (codemode ? codemodeScriptPreview(codemode.code) : null)
+      ?? getToolPreview(block);
 
   return (
     <div
@@ -1319,7 +1324,12 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
             ) : block.toolName}
           </span>
           <span style={{ color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-            {isStreamingInput ? t("chat.generatingToolInput") : cardPreview}
+            {isStreamingInput ? t("chat.generatingToolInput") : questionSummary !== null ? (
+              <>
+                {questionSummary.header && <span style={QUESTION_CHIP_STYLE}>{questionSummary.header}</span>}
+                {questionSummary.header ? ` · ${questionSummary.detail}` : questionSummary.detail}
+              </>
+            ) : cardPreview}
           </span>
           {codemodeCallCount > 0 && (
             <span style={{ fontSize: 11, color: "var(--text-dim)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>

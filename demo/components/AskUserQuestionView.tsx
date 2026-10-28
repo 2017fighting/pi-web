@@ -11,7 +11,8 @@ import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
 // typed answer and a note on their own lines. Nothing here is clickable: the call is
 // over, and a click would fabricate an answer that never happened.
 
-const CHIP_STYLE: React.CSSProperties = {
+/** A question's short header as a chip: the collapsed row's summary and each body block's label. */
+export const QUESTION_CHIP_STYLE: React.CSSProperties = {
   padding: "1px 6px",
   borderRadius: 4,
   background: "color-mix(in srgb, var(--success) 15%, transparent)",
@@ -52,7 +53,7 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
       {(question.header || question.multiSelect || block.unanswered) && (
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-          {question.header && <span style={CHIP_STYLE}>{question.header}</span>}
+          {question.header && <span style={QUESTION_CHIP_STYLE}>{question.header}</span>}
           {question.multiSelect && <span style={TAG_STYLE}>{t("askUserQuestion.multiSelect")}</span>}
           {block.unanswered && (
             <span style={{ ...TAG_STYLE, border: "1px solid var(--warning)", color: "var(--warning)" }}>

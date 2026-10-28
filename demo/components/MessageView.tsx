@@ -15,8 +15,8 @@ import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatc
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { statusCardBorder, statusResultBorder, statusSeparatorBorder } from "@/lib/status-colors";
-import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummary, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
-import { AskUserQuestionView } from "./AskUserQuestionView";
+import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
+import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
@@ -1166,6 +1166,13 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
     ? summarizeApplyPatchInput(block)
     : null;
 
+  // The questionnaire's summary keeps its first part apart, because the row draws
+  // it as the header chip the call carried rather than as flat text.
+  const questionSummary = questionnaire && questionState ? askUserQuestionSummaryParts(questionnaire, questionState, t) : null;
+  // The one line beside the tool's name: an applied patch's files, or a
+  // questionnaire's summary of the exchange.
+  const cardPreview = questionSummary !== null ? null : (patchLabel ?? getToolPreview(block));
+
   // Result display
   const resultText = result
     ? result.content.filter((b): b is { type: "text"; text: string } => b.type === "text").map((b) => b.text).join("\n")
@@ -1209,7 +1216,12 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
             {block.toolName}
           </span>
           <span style={{ color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-            {isStreamingInput ? t("chat.generatingToolInput") : (patchLabel ?? (questionnaire && questionState ? askUserQuestionSummary(questionnaire, questionState, t) : null) ?? getToolPreview(block))}
+            {isStreamingInput ? t("chat.generatingToolInput") : questionSummary !== null ? (
+              <>
+                {questionSummary.header && <span style={QUESTION_CHIP_STYLE}>{questionSummary.header}</span>}
+                {questionSummary.header ? ` · ${questionSummary.detail}` : questionSummary.detail}
+              </>
+            ) : cardPreview}
           </span>
           {duration !== undefined && (
             <span style={{ fontSize: 11, color: "var(--text-dim)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{duration}s</span>

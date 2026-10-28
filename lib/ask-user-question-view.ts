@@ -198,6 +198,33 @@ const STATE_KEY = {
 } as const;
 
 /**
+ * The collapsed row's summary, split so the header can carry its own chip: the
+ * view draws the header as a chip beside the card's name and the detail beside
+ * it, the way the expanded body chips each question's header.
+ */
+export interface AskUserQuestionSummaryParts {
+  /** The first question's header chip; empty when the call carried none. */
+  header: string;
+  /** How many questions the call carried, and where it stands. */
+  detail: string;
+}
+
+/** The summary's two parts, for a view that draws the chip apart from the text. */
+export function askUserQuestionSummaryParts(
+  questions: readonly AskUserQuestionQuestion[],
+  state: AskUserQuestionState,
+  t: Translate,
+): AskUserQuestionSummaryParts {
+  const count = questions.length === 1
+    ? t("askUserQuestion.questionCountOne")
+    : t("askUserQuestion.questionCount", { count: questions.length });
+  const answer = state.kind === "answered"
+    ? state.label ?? t("askUserQuestion.unanswered")
+    : t(STATE_KEY[state.kind]);
+  return { header: questions[0]?.header ?? "", detail: [count, answer].filter((part) => part).join(" · ") };
+}
+
+/**
  * One question paired with what the result recorded for it, as the expanded
  * card draws it: the option labels to tick, the text typed in place of or
  * alongside them, the note, and whether the question was left blank.
@@ -267,18 +294,14 @@ export function askUserQuestionBlocks(
 /**
  * The collapsed card's one line: the first question's header chip, how many
  * questions the call carried, and where the call stands. The run time is the
- * card's own slot, not this text's.
+ * card's own slot, not this text's. The view draws the header apart through
+ * `askUserQuestionSummaryParts()`; this is the same summary as one string.
  */
 export function askUserQuestionSummary(
   questions: readonly AskUserQuestionQuestion[],
   state: AskUserQuestionState,
   t: Translate,
 ): string {
-  const count = questions.length === 1
-    ? t("askUserQuestion.questionCountOne")
-    : t("askUserQuestion.questionCount", { count: questions.length });
-  const answer = state.kind === "answered"
-    ? state.label ?? t("askUserQuestion.unanswered")
-    : t(STATE_KEY[state.kind]);
-  return [questions[0]?.header, count, answer].filter((part) => part).join(" · ");
+  const { header, detail } = askUserQuestionSummaryParts(questions, state, t);
+  return [header, detail].filter((part) => part).join(" · ");
 }
