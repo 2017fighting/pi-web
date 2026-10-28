@@ -268,6 +268,9 @@ export function SubagentViewer({ sessionId, fallbackLabel, running, onOpenFile }
                 <MessageView
                   message={message}
                   toolResults={toolResults}
+                  // A subagent's own run is what a pending call waits on: live
+                  // while the wrapper runs, over once it settles.
+                  isRunActive={running}
                   cwd={info?.cwd}
                   onOpenFile={onOpenFile}
                   sessionId={sessionId}

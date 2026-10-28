@@ -953,6 +953,8 @@ test("reads a questionnaire with no result as waiting while its run is live and 
   assert.match(textOf(renderMessage(message, { isRunActive: true })), /Pick · 1 question · waiting for an answer/);
   // A finished message on an ended run: pi never wrote a result.
   assert.match(textOf(renderMessage(message, { isRunActive: false })), /Pick · 1 question · unfinished/);
+  // The run is what counts: a message that outlived it never keeps reading waiting.
+  assert.match(textOf(renderMessage(message, { isStreaming: true, isRunActive: false })), /Pick · 1 question · unfinished/);
 });
 
 test("expands a questionnaire into its questions, options and the ticked answer", (t) => {

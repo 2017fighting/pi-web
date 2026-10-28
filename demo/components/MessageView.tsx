@@ -1147,8 +1147,10 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   const questionnaire = parseAskUserQuestion(block);
   // Where that call stands: answered or declined from its result, else waiting
   // while the run that made it is still going, and unfinished once that run has
-  // ended without a result. The liveness is the run, not the message.
-  const questionState = questionnaire === null ? null : askUserQuestionState(result, isStreaming === true || isRunActive === true);
+  // ended without a result. The run is the source when the caller knows it; the
+  // message's own stream is only the fallback.
+  const questionLive = isRunActive ?? isStreaming === true;
+  const questionState = questionnaire === null ? null : askUserQuestionState(result, questionLive);
   // The card already says what came back, so the result's envelope underneath it
   // would print the same answer twice.
   const hidesResult = questionnaire !== null && askUserQuestionHidesResult(result);

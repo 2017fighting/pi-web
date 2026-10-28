@@ -259,12 +259,15 @@ function chosenPreview(label: string | undefined, question: AskUserQuestionQuest
  * the labels to tick and the text and note to show. Answers are matched to
  * questions by `questionIndex`, and a question with no answer reads `unanswered`
  * unless the result is a dismissal, so a partial submit is legible while a
- * decline is not dressed up as one. A block also carries the chosen option's
- * preview, so the card can show the artifact that option offered.
+ * decline is not dressed up as one. An error's answers are not what the user
+ * chose — the collapsed row reads its slot `unanswered` — so its questions read
+ * the same way rather than ticking a label nobody was shown. A block also
+ * carries the chosen option's preview, so the card can show the artifact that
+ * option offered.
  */
 export function askUserQuestionBlocks(
   questions: readonly AskUserQuestionQuestion[],
-  result: { details?: unknown } | undefined,
+  result: { details?: unknown; isError?: boolean } | undefined,
 ): AskUserQuestionBlock[] {
   const details = result?.details;
   const answers = isRecord(details) && Array.isArray(details.answers) ? details.answers : [];
@@ -274,8 +277,9 @@ export function askUserQuestionBlocks(
   // `details`: a thrown tool error carries no `details` record at all, and it is not
   // a dismissal either.
   const submitted = result !== undefined && !isDeclinedResult(details);
+  const failed = result !== undefined && isErrorResult(result);
   return questions.map((question, index) => {
-    const answer = answers.find((entry) => isRecord(entry) && entry.questionIndex === index);
+    const answer = failed ? undefined : answers.find((entry) => isRecord(entry) && entry.questionIndex === index);
     if (!isRecord(answer)) {
       return { question, selected: [], custom: null, note: null, unanswered: submitted, preview: null };
     }
