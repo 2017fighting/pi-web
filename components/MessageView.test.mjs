@@ -1125,9 +1125,10 @@ test("marks a question whose answer entry names no choice unanswered, as its row
   t.after(() => clearExpandedToolCalls());
   const text = textOf(renderQuestionnaire(block, result));
   // The collapsed row reads `unanswered`, and the expanded body marks the question
-  // with it rather than drawing a list nobody ticked as though it were an answer.
+  // with it — the word twice on screen, once in the row and once as the block's
+  // tag — rather than drawing a list nobody ticked as though it were an answer.
   assert.match(text, /Auth · 1 question · unanswered/);
-  assert.match(text, /AuthunansweredWhich auth method\?/);
+  assert.equal((text.match(/unanswered/g) ?? []).length, 2, "the row and the block both say unanswered");
   assert.match(text, /○OAuth/);
   assert.doesNotMatch(text, /✓/);
 });

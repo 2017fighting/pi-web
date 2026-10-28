@@ -109,11 +109,21 @@ function readAnswer(answer: Record<string, unknown>): AnswerChoice {
   return { labels: [], custom: null };
 }
 
+/**
+ * Whether a choice names nothing: no label picked and no text typed. This is the
+ * one definition of a blank answer, so the collapsed row's answer slot and the
+ * expanded body's `unanswered` mark cannot disagree about the same entry.
+ */
+function isBlankChoice(choice: AnswerChoice): boolean {
+  return choice.labels.length === 0 && choice.custom === null;
+}
+
 /** A choice as one line: its labels and the text typed with them, comma-separated. */
 function answerLabel(choice: AnswerChoice): string | null {
+  if (isBlankChoice(choice)) return null;
   const parts = [...choice.labels];
   if (choice.custom) parts.push(choice.custom);
-  return parts.length > 0 ? parts.join(", ") : null;
+  return parts.join(", ");
 }
 
 /**
@@ -299,10 +309,10 @@ export function askUserQuestionBlocks(
       selected: choice.labels,
       custom: choice.custom,
       note: typeof answer.notes === "string" && answer.notes ? answer.notes : null,
-      // An entry that names no choice — no label ticked and nothing typed — is the
-      // blank the collapsed row's answer slot reads `unanswered` for, so the body
-      // says the same rather than drawing an unticked list that looks answered.
-      unanswered: submitted && choice.labels.length === 0 && choice.custom === null,
+      // An entry that names no choice is the blank the collapsed row's answer slot
+      // reads `unanswered` for, so the body says the same rather than drawing an
+      // unticked list that looks answered — one predicate, `isBlankChoice()`.
+      unanswered: submitted && isBlankChoice(choice),
       preview: chosenPreview(answer.kind === "option" ? choice.labels[0] : undefined, question),
     };
   });
