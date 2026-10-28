@@ -1446,7 +1446,7 @@ function PairedDiffResult({ diff }: {
   return (
     <div
       style={{
-        borderTop: "1px solid color-mix(in srgb, var(--success) 15%, transparent)",
+        borderTop: statusResultBorder(false),
         background: "var(--bg)",
       }}
     >

@@ -50,10 +50,10 @@ const SWEPT_SOURCES = [
 // written as. A surface draws a theme token instead of any of these.
 const BANNED_LITERAL = /#(?:ef4444|f87171|dc2626|16a34a|d97706|10b981|4ade80|22c55e|f59e0b|facc15|d4a017|fee2e2|dcfce7|fecaca|bbf7d0)\b|rgba\(\s*(?:239\s*,\s*68\s*,\s*68|34\s*,\s*197\s*,\s*94|74\s*,\s*222\s*,\s*128|250\s*,\s*204\s*,\s*21)/i;
 // A swept surface draws a theme status token, directly or through the shared
-// error-color helper. The trust dialog is the one exception: it keeps its layout
+// helpers in `lib/status-colors.ts` (`STATUS_*_COLOR`, the border builders). The trust dialog is the one exception: it keeps its layout
 // in CSS, so its shield takes the token from the icon class' `color` (asserted
 // in the render below) and the file itself draws none.
-const STATUS_TOKEN = /var\(--(?:error|success|warning)\)|STATUS_ERROR_COLOR/;
+const STATUS_TOKEN = /var\(--(?:error|success|warning)\)|STATUS_(?:ERROR|SUCCESS|WARNING)_COLOR|status(?:Card|Separator|Result)Border|statusTextColor|statusCardBackground/;
 const CSS_COLORED_SOURCES = new Set(["components/ProjectTrustDialog.tsx"]);
 
 test("no swept surface keeps a status-color literal", () => {

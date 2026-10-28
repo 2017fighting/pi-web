@@ -2,7 +2,7 @@
 
 import { MarkdownBody } from "./MarkdownBody";
 import { useI18n } from "@/hooks/useI18n";
-import { statusSeparatorBorder } from "@/lib/status-colors";
+import { STATUS_SUCCESS_COLOR, STATUS_WARNING_COLOR, statusSeparatorBorder } from "@/lib/status-colors";
 import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
 
 // The expanded `ask_user_question` card: the questionnaire as a read-only record.
@@ -15,8 +15,8 @@ import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
 export const QUESTION_CHIP_STYLE: React.CSSProperties = {
   padding: "1px 6px",
   borderRadius: 4,
-  background: "color-mix(in srgb, var(--success) 15%, transparent)",
-  color: "var(--success)",
+  background: `color-mix(in srgb, ${STATUS_SUCCESS_COLOR} 15%, transparent)`,
+  color: STATUS_SUCCESS_COLOR,
   fontSize: 11,
   fontWeight: 600,
   flexShrink: 0,
@@ -56,7 +56,7 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
           {question.header && <span style={QUESTION_CHIP_STYLE}>{question.header}</span>}
           {question.multiSelect && <span style={TAG_STYLE}>{t("askUserQuestion.multiSelect")}</span>}
           {block.unanswered && (
-            <span style={{ ...TAG_STYLE, border: "1px solid var(--warning)", color: "var(--warning)" }}>
+            <span style={{ ...TAG_STYLE, border: `1px solid ${STATUS_WARNING_COLOR}`, color: STATUS_WARNING_COLOR }}>
               {t("askUserQuestion.unanswered")}
             </span>
           )}
@@ -70,7 +70,7 @@ function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
             <li key={option.label} style={{ display: "flex", gap: 6, alignItems: "baseline", minWidth: 0 }}>
               <span
                 aria-hidden="true"
-                style={{ color: chosen ? "var(--success)" : "var(--text-dim)", flexShrink: 0, width: 12, textAlign: "center" }}
+                style={{ color: chosen ? STATUS_SUCCESS_COLOR : "var(--text-dim)", flexShrink: 0, width: 12, textAlign: "center" }}
               >
                 {chosen ? "✓" : "○"}
               </span>
