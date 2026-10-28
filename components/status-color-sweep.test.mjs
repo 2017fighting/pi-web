@@ -53,7 +53,7 @@ const BANNED_LITERAL = /#(?:ef4444|f87171|dc2626|16a34a|d97706|10b981|4ade80|22c
 // helpers in `lib/status-colors.ts` (`STATUS_*_COLOR`, the border builders). The trust dialog is the one exception: it keeps its layout
 // in CSS, so its shield takes the token from the icon class' `color` (asserted
 // in the render below) and the file itself draws none.
-const STATUS_TOKEN = /var\(--(?:error|success|warning)\)|STATUS_(?:ERROR|SUCCESS|WARNING)_COLOR|status(?:Card|Separator|Result)Border|statusTextColor|statusCardBackground/;
+const STATUS_TOKEN = /var\(--(?:error|success|warning)\)|STATUS_(?:ERROR|SUCCESS|WARNING)_COLOR|status(?:Card|Separator|Result)Border|statusTextColor|statusCardBackground|statusWash|statusBorder/;
 const CSS_COLORED_SOURCES = new Set(["components/ProjectTrustDialog.tsx"]);
 
 test("no swept surface keeps a status-color literal", () => {
@@ -91,17 +91,21 @@ test("no swept stylesheet keeps a status-color literal", () => {
 // Ticket #16: a translucent wash of a status token is spelled once, in
 // `lib/status-colors.ts` (`statusWash()` / `statusBorder()`). A component that
 // needs one calls it instead of writing the `color-mix()` out again, so no
-// surface can drift to its own copy of the shape.
+// surface can drift to its own copy of the shape. The shape is spelled here
+// because the banned string is what the pin is about.
 const HAND_WRITTEN_WASH = /color-mix\(in srgb, (?:var\(--(?:success|error|warning)\)|\$\{STATUS_(?:SUCCESS|ERROR|WARNING)_COLOR\}) \d+%, transparent\)/;
 
+// Both trees: the demo draws the same chrome from its own copy of the module.
 test("no component spells the status wash by hand", () => {
-  const dir = new URL("../components/", import.meta.url);
-  const files = readdirSync(dir, { recursive: true, encoding: "utf8" })
-    .filter((file) => /\.(?:ts|tsx)$/.test(file));
-  assert.ok(files.length >= 40, `expected the components, found ${files.length}`);
-  for (const file of files) {
-    const handWritten = readFileSync(new URL(file, dir), "utf8").match(HAND_WRITTEN_WASH);
-    assert.equal(handWritten, null, `components/${file} still spells ${handWritten?.[0]}`);
+  for (const root of ["components/", "demo/components/"]) {
+    const dir = new URL(`../${root}`, import.meta.url);
+    const files = readdirSync(dir, { recursive: true, encoding: "utf8" })
+      .filter((file) => /\.(?:ts|tsx)$/.test(file));
+    assert.ok(files.length >= 40, `expected the components, found ${files.length}`);
+    for (const file of files) {
+      const handWritten = readFileSync(new URL(file, dir), "utf8").match(HAND_WRITTEN_WASH);
+      assert.equal(handWritten, null, `${root}${file} still spells ${handWritten?.[0]}`);
+    }
   }
 });
 

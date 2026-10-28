@@ -1,12 +1,14 @@
 /**
- * The status colors a tool card, dot, chip or label draws from the theme's
- * tokens. `color-mix()` over an undefined token drops the whole declaration, so
- * the washes below only ever reference `--success` / `--error` / `--warning`;
- * every palette defines them.
+ * The status colors a tool card, dot, chip, banner or label draws from the
+ * theme's tokens. `color-mix()` over an undefined token drops the whole
+ * declaration, so the washes below only ever reference `--success` /
+ * `--error` / `--warning`; every palette defines them.
  *
  * This is the one home of those three token names and of the translucent
  * `color-mix()` shape drawn from them, so a surface imports a color or a wash
- * here rather than spelling `var(--error)` or `color-mix(...)` again.
+ * here rather than spelling `var(--error)` or `color-mix(...)` again. A mix of a
+ * token into a surface (`var(--bg-panel)`, `var(--border)`) is not this shape
+ * and stays where the surface draws it.
  */
 
 /** A passed state's color: a tool's name, a status dot or label. */
@@ -18,18 +20,21 @@ export const STATUS_ERROR_COLOR = "var(--error)";
 /** A not-settled state's color: aborted runs, warnings, the unanswered chip. */
 export const STATUS_WARNING_COLOR = "var(--warning)";
 
+/** One of the three status colors above, and nothing else: what a wash takes. */
+export type StatusColor = typeof STATUS_SUCCESS_COLOR | typeof STATUS_ERROR_COLOR | typeof STATUS_WARNING_COLOR;
+
 /** A status word's color, from whether the thing it labels failed. */
-export function statusTextColor(isError: boolean): string {
+export function statusTextColor(isError: boolean): StatusColor {
   return isError ? STATUS_ERROR_COLOR : STATUS_SUCCESS_COLOR;
 }
 
 /** A translucent wash of a status color: a banner's border or fill, a chip. */
-export function statusWash(color: string, percent: number): string {
+export function statusWash(color: StatusColor, percent: number): string {
   return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 }
 
 /** One status line of the given weight: `1px solid` plus a wash of the color. */
-export function statusBorder(color: string, percent: number): string {
+export function statusBorder(color: StatusColor, percent: number): string {
   return `1px solid ${statusWash(color, percent)}`;
 }
 

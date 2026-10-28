@@ -8,6 +8,7 @@ import { dispatchSessionRowContextMenu } from "@/lib/session-row-context-menu";
 import { skillExpansionToCommand } from "@/lib/slash-display";
 import { getProjectActivity, getRecentProjects, sessionsForProject } from "@/lib/project-groups";
 import { workspaceKeyOf } from "@/lib/workspace-memory";
+import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, statusWash } from "@/lib/status-colors";
 import { formatRelativeTime } from "@/lib/i18n/format";
 import { useI18n } from "@/hooks/useI18n";
 import { useResizablePanel } from "@/hooks/useResizablePanel";
@@ -1509,7 +1510,7 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
                       const isCurrent = wt.path === currentWorktreePath;
                       if (wtConfirmRemove === wt.path) {
                         return (
-                          <div key={wt.path} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderBottom: "1px solid var(--border)", background: "color-mix(in srgb, var(--error) 6%, transparent)" }}>
+                          <div key={wt.path} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderBottom: "1px solid var(--border)", background: statusWash(STATUS_ERROR_COLOR, 6) }}>
                             <span style={{ flex: 1, fontSize: 11, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {t("sidebar.forceRemoveCheckout")}
                             </span>
@@ -1582,7 +1583,7 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
                                 borderRadius: 5, flexShrink: 0,
                                 transition: "color 0.12s, background 0.12s",
                               }}
-                              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--error)"; e.currentTarget.style.background = "color-mix(in srgb, var(--error) 8%, transparent)"; }}
+                              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--error)"; e.currentTarget.style.background = statusWash(STATUS_ERROR_COLOR, 8); }}
                               onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-dim)"; e.currentTarget.style.background = "none"; }}
                             >
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1967,7 +1968,7 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
               title={t("sidebar.refreshExplorer")}
               skipHover={explorerRefreshDone}
               color={explorerRefreshDone ? "var(--success)" : "var(--text-dim)"}
-              background={explorerRefreshDone ? "color-mix(in srgb, var(--success) 18%, transparent)" : "none"}
+              background={explorerRefreshDone ? statusWash(STATUS_SUCCESS_COLOR, 18) : "none"}
               marginRight={6}
             >
               {explorerRefreshDone ? (
@@ -2248,7 +2249,7 @@ function SessionItem({
         paddingRight: 8,
         cursor: confirmDelete || renaming ? "default" : "pointer",
         background: confirmDelete
-          ? "color-mix(in srgb, var(--error) 6%, transparent)"
+          ? statusWash(STATUS_ERROR_COLOR, 6)
           : isSelected ? "var(--bg-selected)" : hovered ? "var(--bg-hover)" : "transparent",
         borderLeft: confirmDelete
           ? "2px solid var(--error)"
@@ -2441,9 +2442,9 @@ function SessionItem({
                   transition: "background 0.12s, color 0.12s, border-color 0.12s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "color-mix(in srgb, var(--error) 8%, transparent)";
+                  e.currentTarget.style.background = statusWash(STATUS_ERROR_COLOR, 8);
                   e.currentTarget.style.color = "var(--error)";
-                  e.currentTarget.style.borderColor = "color-mix(in srgb, var(--error) 35%, transparent)";
+                  e.currentTarget.style.borderColor = statusWash(STATUS_ERROR_COLOR, 35);
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "var(--bg-hover)";
