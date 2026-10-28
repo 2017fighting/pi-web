@@ -14,7 +14,7 @@ import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, 
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
-import { statusCardBorder, statusResultBorder, statusSeparatorBorder } from "@/lib/status-colors";
+import { statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor } from "@/lib/status-colors";
 import { askUserQuestionBlocks, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
@@ -1192,7 +1192,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
         overflow: "hidden",
         fontSize: 12,
         border: statusCardBorder(isError),
-        background: isError ? "color-mix(in srgb, var(--error) 5%, transparent)" : "color-mix(in srgb, var(--success) 4%, transparent)",
+        background: statusCardBackground(isError),
       }}
     >
       {/* ── Tool call header ── */}
@@ -1214,7 +1214,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
             textAlign: "left",
           }}
         >
-          <span style={{ color: isError ? "var(--error)" : "var(--success)", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>
+          <span style={{ color: statusTextColor(isError), fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>
             {block.toolName}
           </span>
           <span style={{ color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
@@ -1287,7 +1287,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
 
       {/* ── Expanded: applied-patch split diff ── */}
       {expanded && cardView === "patch" && patchFiles && (
-        <div style={{ borderTop: "1px solid color-mix(in srgb, var(--success) 15%, transparent)", background: "var(--bg)" }}>
+        <div style={{ borderTop: statusResultBorder(false), background: "var(--bg)" }}>
           <SplitFilesView files={patchFiles} />
         </div>
       )}

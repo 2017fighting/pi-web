@@ -86,8 +86,14 @@ export function parseAskUserQuestion(call: { toolName: string; input: unknown; r
   return questions;
 }
 
-/** What one answer reads as: the labels it picked, and the text typed alongside them. */
-function readAnswer(answer: Record<string, unknown>): { labels: string[]; custom: string | null } {
+/** One answer's choice: the option labels it picked and the text typed alongside them. */
+interface AnswerChoice {
+  labels: string[];
+  custom: string | null;
+}
+
+/** What one answer reads as, whatever its `kind`, in the shape every reader below takes. */
+function readAnswer(answer: Record<string, unknown>): AnswerChoice {
   if (answer.kind === "multi") {
     const labels = Array.isArray(answer.selected)
       ? answer.selected.filter((label): label is string => typeof label === "string" && label.length > 0)
@@ -103,11 +109,10 @@ function readAnswer(answer: Record<string, unknown>): { labels: string[]; custom
   return { labels: [], custom: null };
 }
 
-/** The picked labels and the text typed alongside them, as one line. */
-function answerLabel(answer: Record<string, unknown>): string | null {
-  const { labels, custom } = readAnswer(answer);
-  const parts = [...labels];
-  if (custom) parts.push(custom);
+/** A choice as one line: its labels and the text typed with them, comma-separated. */
+function answerLabel(choice: AnswerChoice): string | null {
+  const parts = [...choice.labels];
+  if (choice.custom) parts.push(choice.custom);
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
@@ -173,7 +178,7 @@ export function askUserQuestionState(
   const first = isRecord(details) && Array.isArray(details.answers)
     ? details.answers.find((answer) => isRecord(answer) && answer.questionIndex === 0)
     : undefined;
-  return { kind: "answered", label: first && isRecord(first) ? answerLabel(first) : null };
+  return { kind: "answered", label: first && isRecord(first) ? answerLabel(readAnswer(first)) : null };
 }
 
 /**
@@ -283,14 +288,14 @@ export function askUserQuestionBlocks(
     if (!isRecord(answer)) {
       return { question, selected: [], custom: null, note: null, unanswered: submitted, preview: null };
     }
-    const { labels, custom } = readAnswer(answer);
+    const choice = readAnswer(answer);
     return {
       question,
-      selected: labels,
-      custom,
+      selected: choice.labels,
+      custom: choice.custom,
       note: typeof answer.notes === "string" && answer.notes ? answer.notes : null,
       unanswered: false,
-      preview: chosenPreview(answer.kind === "option" ? labels[0] : undefined, question),
+      preview: chosenPreview(answer.kind === "option" ? choice.labels[0] : undefined, question),
     };
   });
 }

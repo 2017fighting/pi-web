@@ -26,7 +26,7 @@ import { CodemodeCallList } from "./CodemodeToolView";
 import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { mcpToolLabel, prettyMcpResultText } from "@/lib/mcp-tool-display";
-import { statusCardBorder, statusResultBorder, statusSeparatorBorder } from "@/lib/status-colors";
+import { statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor } from "@/lib/status-colors";
 import { streamRateKey, streamRateStart, streamTokensPerSecond, type StreamRateStart } from "@/lib/stream-token-rate";
 import { getTranscriptNotices } from "@/lib/transcript-notices";
 import { TRANSCRIPT_NOTICE_WARNING_COLOR, transcriptNoticeText } from "@/components/TranscriptNotices";
@@ -1293,7 +1293,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
         overflow: "hidden",
         fontSize: 12,
         border: statusCardBorder(isError),
-        background: isError ? "color-mix(in srgb, var(--error) 5%, transparent)" : "color-mix(in srgb, var(--success) 4%, transparent)",
+        background: statusCardBackground(isError),
       }}
     >
       {/* ── Tool call header ── */}
@@ -1317,7 +1317,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
         >
           <span
             title={mcpLabel ? block.toolName : undefined}
-            style={{ color: isError ? "var(--error)" : "var(--success)", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11, flexShrink: 0 }}
+            style={{ color: statusTextColor(isError), fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11, flexShrink: 0 }}
           >
             {mcpLabel ? (
               <>
@@ -1406,7 +1406,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
 
       {/* ── Expanded: applied-patch split diff ── */}
       {expanded && cardView === "patch" && patchFiles && (
-        <div style={{ borderTop: "1px solid color-mix(in srgb, var(--success) 15%, transparent)", background: "var(--bg)" }}>
+        <div style={{ borderTop: statusResultBorder(false), background: "var(--bg)" }}>
           <SplitFilesView files={patchFiles} />
         </div>
       )}

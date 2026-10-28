@@ -11,6 +11,7 @@ import { asBracketedPaste, toTerminalKeyData } from "@/lib/terminal-input";
 import { countToolCallBlocks, getAssistantErrorMessage, getDisplayableAssistantBlocks, hasAssistantAnswer, isAssistantTruncated, isMessageGroupAnchor, liveRunMessageIndex, splitFinalAssistantBlocks } from "@/lib/message-display";
 import { extractTurnWrittenFiles, type WrittenFile } from "@/lib/turn-written-files";
 import { buildQuotedSelection } from "@/lib/quoted-selection";
+import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, STATUS_WARNING_COLOR } from "@/lib/status-colors";
 import { MessageView } from "./MessageView";
 import { MarkdownBody } from "./MarkdownBody";
 import { ChatInput, type ChatInputHandle } from "./ChatInput";
@@ -1322,7 +1323,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
                 onAbort={closeQuotedSelection}
                 isStreaming={false}
               />
-              {quoteError && <div role="alert" style={{ color: "var(--error)", fontSize: 12, overflowWrap: "anywhere" }}>{quoteError}</div>}
+              {quoteError && <div role="alert" style={{ color: STATUS_ERROR_COLOR, fontSize: 12, overflowWrap: "anywhere" }}>{quoteError}</div>}
             </fieldset>
           ) : <>
           <button
@@ -1440,11 +1441,11 @@ function NoticeShelf({ notices, floating = false, onPauseChange }: { notices: No
     >
       {notices.map((notice, index) => {
         const color = notice.type === "error"
-          ? "var(--error)"
+          ? STATUS_ERROR_COLOR
           : notice.type === "warning"
-            ? "var(--warning)"
+            ? STATUS_WARNING_COLOR
             : notice.type === "success"
-              ? "var(--success)"
+              ? STATUS_SUCCESS_COLOR
               : "var(--accent)";
         return (
           <div

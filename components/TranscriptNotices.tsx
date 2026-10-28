@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { useI18n } from "@/hooks/useI18n";
 import type { Translate } from "@/lib/i18n/types";
+import { STATUS_WARNING_COLOR } from "@/lib/status-colors";
 import {
   formatCacheWarmCost,
   formatNoticeCost,
@@ -12,7 +13,7 @@ import {
 } from "@/lib/transcript-notices";
 
 // pi's TUI draws these lines in its warning color, cache warming dim (#1265).
-export const TRANSCRIPT_NOTICE_WARNING_COLOR = "var(--warning)";
+export const TRANSCRIPT_NOTICE_WARNING_COLOR = STATUS_WARNING_COLOR;
 
 function costSuffix(t: Translate, cost: number): string {
   const formatted = formatNoticeCost(cost);
