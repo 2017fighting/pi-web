@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import { createJiti } from "jiti";
 
@@ -85,6 +85,23 @@ test("no swept stylesheet keeps a status-color literal", () => {
       .replace(/--[\w-]+\s*:[^;]+;/g, "");
     const literal = source.match(BANNED_LITERAL);
     assert.equal(literal, null, `${file} still holds ${literal?.[0]}`);
+  }
+});
+
+// Ticket #16: a translucent wash of a status token is spelled once, in
+// `lib/status-colors.ts` (`statusWash()` / `statusBorder()`). A component that
+// needs one calls it instead of writing the `color-mix()` out again, so no
+// surface can drift to its own copy of the shape.
+const HAND_WRITTEN_WASH = /color-mix\(in srgb, (?:var\(--(?:success|error|warning)\)|\$\{STATUS_(?:SUCCESS|ERROR|WARNING)_COLOR\}) \d+%, transparent\)/;
+
+test("no component spells the status wash by hand", () => {
+  const dir = new URL("../components/", import.meta.url);
+  const files = readdirSync(dir, { recursive: true, encoding: "utf8" })
+    .filter((file) => /\.(?:ts|tsx)$/.test(file));
+  assert.ok(files.length >= 40, `expected the components, found ${files.length}`);
+  for (const file of files) {
+    const handWritten = readFileSync(new URL(file, dir), "utf8").match(HAND_WRITTEN_WASH);
+    assert.equal(handWritten, null, `components/${file} still spells ${handWritten?.[0]}`);
   }
 });
 

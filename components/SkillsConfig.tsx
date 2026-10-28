@@ -48,6 +48,7 @@ import {
 } from "./SettingsUi";
 import { itemsToSwitch, projectTrustReloadKey } from "./settings-ui-helpers";
 import { MarkdownBody } from "./MarkdownBody";
+import { STATUS_SUCCESS_COLOR, statusWash } from "@/lib/status-colors";
 
 type SkillScope = "global" | "project" | "path";
 
@@ -600,9 +601,9 @@ function AddSkillPanel({
                   disabled={isInstalled || isInstalling || installing !== null}
                   style={{
                     flexShrink: 0,
-                    background: isInstalled ? "color-mix(in srgb, var(--success) 10%, transparent)" : "none",
+                    background: isInstalled ? statusWash(STATUS_SUCCESS_COLOR, 10) : "none",
                     color: isInstalled
-                      ? "var(--success)"
+                      ? STATUS_SUCCESS_COLOR
                       : isInstalling
                         ? "var(--accent)"
                         : "var(--text-muted)",

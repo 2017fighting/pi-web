@@ -35,6 +35,7 @@ import {
   ConfigStatusDot,
   ConfigSwitch,
 } from "./SettingsUi";
+import { STATUS_SUCCESS_COLOR, statusWash } from "@/lib/status-colors";
 
 function shortenPath(p: string): string {
   // Match common home dir patterns: /Users/xxx, /home/xxx
@@ -510,9 +511,9 @@ function AddSkillPanel({
                   disabled={isInstalled || isInstalling || installing !== null}
                   style={{
                     flexShrink: 0,
-                    background: isInstalled ? "color-mix(in srgb, var(--success) 10%, transparent)" : "none",
+                    background: isInstalled ? statusWash(STATUS_SUCCESS_COLOR, 10) : "none",
                     color: isInstalled
-                      ? "var(--success)"
+                      ? STATUS_SUCCESS_COLOR
                       : isInstalling
                         ? "var(--accent)"
                         : "var(--text-muted)",

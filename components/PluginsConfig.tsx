@@ -49,7 +49,7 @@ import {
   ConfigTrustNotice,
 } from "./SettingsUi";
 import { itemsToSwitch, projectTrustReloadKey } from "./settings-ui-helpers";
-import { STATUS_ERROR_COLOR } from "@/lib/status-colors";
+import { STATUS_ERROR_COLOR, STATUS_WARNING_COLOR, statusWash } from "@/lib/status-colors";
 
 type PluginScope = PluginPackageInfo["scope"];
 type PluginAction = "install" | "remove" | "update" | "disable" | "enable";
@@ -384,8 +384,8 @@ function PackageDetail({
                   fontSize: 10,
                   padding: "1px 5px",
                   borderRadius: 3,
-                  background: "color-mix(in srgb, var(--warning) 12%, transparent)",
-                  color: "var(--warning)",
+                  background: statusWash(STATUS_WARNING_COLOR, 12),
+                  color: STATUS_WARNING_COLOR,
                 }}
               >
                 {t("i18n.filtered")}

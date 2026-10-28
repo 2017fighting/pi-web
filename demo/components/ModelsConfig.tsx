@@ -51,6 +51,7 @@ import {
 import { providerBadgeLabel } from "./enabled-models-helpers";
 import { ProviderIcon } from "./ProviderIcon";
 import { ProviderUsageSummary } from "./ProviderUsageSummary";
+import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, statusBorder } from "@/lib/status-colors";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -461,7 +462,7 @@ function ProviderDetail({ name, provider, onChange, onRename, onDelete, onAddMod
         )}
 
         {discoveryState.phase === "error" && (
-          <div style={{ padding: "7px 9px", border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)", borderRadius: 5, color: "var(--error)", fontSize: 11, lineHeight: 1.4 }}>
+          <div style={{ padding: "7px 9px", border: statusBorder(STATUS_ERROR_COLOR, 30), borderRadius: 5, color: STATUS_ERROR_COLOR, fontSize: 11, lineHeight: 1.4 }}>
             {discoveryState.message}
           </div>
         )}
@@ -742,9 +743,9 @@ function HeaderListEditor({ headers, onChange }: {
   const rowBtnStyle = {
     padding: "6px 9px",
     background: "none",
-    border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
+    border: statusBorder(STATUS_ERROR_COLOR, 30),
     borderRadius: 4,
-    color: "var(--error)",
+    color: STATUS_ERROR_COLOR,
     cursor: "pointer",
     fontSize: 11,
     lineHeight: 1,
@@ -1049,9 +1050,9 @@ function ModelDetail({
                 maxWidth: 260,
                 height: 28,
                 padding: "0 8px",
-                border: `1px solid ${testState.phase === "error" ? "color-mix(in srgb, var(--error) 40%, transparent)" : testState.phase === "success" ? "color-mix(in srgb, var(--success) 40%, transparent)" : "var(--border)"}`,
+                border: testState.phase === "error" ? statusBorder(STATUS_ERROR_COLOR, 40) : testState.phase === "success" ? statusBorder(STATUS_SUCCESS_COLOR, 40) : "var(--border)",
                 borderRadius: 4,
-                background: testState.phase === "error" ? "color-mix(in srgb, var(--error) 18%, var(--bg-panel))" : testState.phase === "success" ? "color-mix(in srgb, var(--success) 18%, var(--bg-panel))" : "var(--bg-panel)",
+                background: testState.phase === "error" ? `color-mix(in srgb, ${STATUS_ERROR_COLOR} 18%, var(--bg-panel))` : testState.phase === "success" ? `color-mix(in srgb, ${STATUS_SUCCESS_COLOR} 18%, var(--bg-panel))` : "var(--bg-panel)",
                 color: "var(--text)",
                 fontSize: 11,
                 display: "inline-flex",

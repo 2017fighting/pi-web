@@ -2,7 +2,7 @@
 
 import { MarkdownBody } from "./MarkdownBody";
 import { useI18n } from "@/hooks/useI18n";
-import { STATUS_SUCCESS_COLOR, STATUS_WARNING_COLOR, statusSeparatorBorder } from "@/lib/status-colors";
+import { STATUS_SUCCESS_COLOR, STATUS_WARNING_COLOR, statusSeparatorBorder, statusWash } from "@/lib/status-colors";
 import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
 
 // The expanded `ask_user_question` card: the questionnaire as a read-only record.
@@ -15,7 +15,7 @@ import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
 export const QUESTION_CHIP_STYLE: React.CSSProperties = {
   padding: "1px 6px",
   borderRadius: 4,
-  background: `color-mix(in srgb, ${STATUS_SUCCESS_COLOR} 15%, transparent)`,
+  background: statusWash(STATUS_SUCCESS_COLOR, 15),
   color: STATUS_SUCCESS_COLOR,
   fontSize: 11,
   fontWeight: 600,
