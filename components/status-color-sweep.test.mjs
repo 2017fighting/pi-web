@@ -5,9 +5,9 @@ import { createJiti } from "jiti";
 
 // Ticket #10 swept the status-color literals out of the surfaces below,
 // drawing `var(--error)` / `var(--success)` / `var(--warning)` (or a
-// `color-mix()` over them) instead; ticket #11 finished the sweep. The grep
-// pins every one of them; the renders below pin what a reader sees on the
-// surfaces a test can mount.
+// `color-mix()` over them) instead; ticket #11 finished the sweep, and ticket
+// #14 the surfaces those two did not list. The grep pins every one of them;
+// the renders below pin what a reader sees on the surfaces a test can mount.
 //
 // `demo/components/TerminalPanel.tsx` is not listed: its xterm `ITheme` needs
 // concrete colors and belongs to the terminal's own light/dark choice, apart
@@ -46,7 +46,7 @@ const SWEPT_SOURCES = [
 
 // The status hexes the sweep bans, and the `rgba(...)` triplets they were
 // written as. A surface draws a theme token instead of any of these.
-const BANNED_LITERAL = /#(?:ef4444|f87171|dc2626|16a34a|d97706|10b981|4ade80|22c55e|f59e0b|fee2e2|dcfce7|fecaca|bbf7d0)\b|rgba\(\s*(?:239\s*,\s*68\s*,\s*68|34\s*,\s*197\s*,\s*94|74\s*,\s*222\s*,\s*128)/i;
+const BANNED_LITERAL = /#(?:ef4444|f87171|dc2626|16a34a|d97706|10b981|4ade80|22c55e|f59e0b|facc15|d4a017|fee2e2|dcfce7|fecaca|bbf7d0)\b|rgba\(\s*(?:239\s*,\s*68\s*,\s*68|34\s*,\s*197\s*,\s*94|74\s*,\s*222\s*,\s*128|250\s*,\s*204\s*,\s*21)/i;
 // A swept surface draws a theme status token, directly or through the shared
 // error-color helper. The trust dialog is the one exception: it keeps its layout
 // in CSS, so its shield takes the token from the icon class' `color` (asserted
@@ -71,6 +71,7 @@ test("no swept surface keeps a status-color literal", () => {
 const SWEPT_STYLESHEETS = [
   "app/settings.css",
   "app/sidebar.css",
+  "app/sidebar-menu.css",
   "app/globals.css",
   "demo/app/settings.css",
   "demo/app/globals.css",
@@ -85,11 +86,23 @@ test("no swept stylesheet keeps a status-color literal", () => {
   }
 });
 
+// Ticket #14 gave the thinking glyph its own token pair: its amber is not a
+// status colour, and it is the same in either theme, so it is defined once on
+// `:root` rather than per palette. Both copies draw it.
+const THINKING_SOURCES = ["components/ThinkingIcon.tsx", "demo/components/ThinkingIcon.tsx"];
+
+// The terminal's status dot reads its own `--terminal-*` family, which its
+// light theme overrides apart from the app theme; `--terminal-warning` joins
+// the success and error pair there. The demo's panel is always dark, so it
+// defines the dark value only.
+const TERMINAL_TOKEN_SOURCES = ["app/globals.css", "demo/app/globals.css"];
+
 const jiti = createJiti(import.meta.url, { tsconfigPaths: true, jsx: { runtime: "automatic" } });
 const React = await jiti.import("react");
 const { renderToStaticMarkup } = await jiti.import("react-dom/server");
 const { I18nProvider } = await jiti.import("@/hooks/useI18n");
 const { ChatInput, ModelErrorBanner } = await jiti.import("./ChatInput.tsx");
+const { ThinkingIcon } = await jiti.import("./ThinkingIcon.tsx");
 const { TreeNode } = await jiti.import("./FileExplorer.tsx");
 const { statusColor } = await jiti.import("./AgentSessionPanel.tsx");
 const { ProjectTrustDialogView } = await jiti.import("./ProjectTrustDialog.tsx");
@@ -180,4 +193,49 @@ test("the trust dialog's shield draws the warning token", () => {
   assert.match(html, /stroke="currentColor"[^>]*class="project-trust-icon"/);
   const rule = settingsCss.slice(settingsCss.indexOf(".project-trust-icon {"));
   assert.match(rule.slice(0, rule.indexOf("}")), /color: var\(--warning\);/);
+});
+
+/** The body of the first rule whose selector starts with `selector`. */
+function ruleBody(css, selector) {
+  const start = css.indexOf(selector);
+  assert.ok(start >= 0, `${selector} exists`);
+  const open = css.indexOf("{", start);
+  return css.slice(open + 1, css.indexOf("}", open));
+}
+
+test("the thinking glyph draws its own amber tokens", () => {
+  for (const file of THINKING_SOURCES) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+    const literal = source.match(BANNED_LITERAL);
+    assert.equal(literal, null, `${file} still holds ${literal?.[0]}`);
+    assert.match(source, /var\(--thinking-(?:stroke|accent)\)/, `${file} draws no thinking token`);
+  }
+  const active = renderToStaticMarkup(React.createElement(ThinkingIcon, { active: true }));
+  assert.match(active, /var\(--thinking-stroke\)/);
+  assert.match(active, /var\(--thinking-accent\)/);
+  assert.doesNotMatch(active, /#d4a017|rgba\(250,\s*204,\s*21/);
+  const idle = renderToStaticMarkup(React.createElement(ThinkingIcon, { active: false }));
+  assert.doesNotMatch(idle, /var\(--thinking-stroke\)/);
+});
+
+// The thinking amber does not follow the app theme, so the pair is defined once
+// on `:root`; a light and a dark page both inherit it.
+test("the thinking tokens are defined once, for every theme", () => {
+  for (const file of ["app/globals.css", "demo/app/globals.css"]) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+    assert.match(source, /--thinking-stroke: #d4a017;/, `${file} defines the thinking stroke`);
+    assert.match(source, /--thinking-accent: #facc15;/, `${file} defines the thinking accent`);
+  }
+});
+
+test("the terminal status dot draws the terminal's own warning token", () => {
+  for (const file of TERMINAL_TOKEN_SOURCES) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+    assert.match(ruleBody(source, ".terminal-status-dot {"), /background: var\(--terminal-warning\)/, `${file} reads the terminal warning`);
+    // The panel defines the family its dot joins (the demo's panel is always dark).
+    assert.match(ruleBody(source, ".terminal-panel {"), /--terminal-warning: #facc15;/, `${file} defines the dark warning`);
+  }
+  // The app's terminal has its own light choice, which overrides the family.
+  const app = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(ruleBody(app, '.terminal-panel[data-terminal-theme="light"] {'), /--terminal-warning: #d97706;/);
 });

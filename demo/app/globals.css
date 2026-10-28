@@ -42,6 +42,10 @@
   --assistant-bg: #ffffff;
   --tool-bg: #f9fafb;
   --bg-subtle: rgba(0,0,0,0.03);
+  /* The thinking glyph's amber is not a status colour and does not follow the
+     app theme; one pair serves every palette. */
+  --thinking-stroke: #d4a017;
+  --thinking-accent: #facc15;
   --chat-content-max-width: 820px;
   --chat-content-font-size: 14px;
 }
@@ -344,6 +348,7 @@ body {
      dot reads the terminal's own tokens, not the app theme's. */
   --terminal-success: #4ade80;
   --terminal-error: #f87171;
+  --terminal-warning: #facc15;
   display: grid;
   grid-template-rows: 38px auto minmax(0, 1fr);
   width: 100%;
@@ -384,7 +389,7 @@ body {
   height: 7px;
   flex: 0 0 7px;
   border-radius: 50%;
-  background: #facc15;
+  background: var(--terminal-warning);
 }
 
 .terminal-status-dot.is-ready { background: var(--terminal-success); }
