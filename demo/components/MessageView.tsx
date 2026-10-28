@@ -1150,7 +1150,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   // ended without a result. The run is the source when the caller knows it; the
   // message's own stream is only the fallback.
   const questionLive = isRunActive ?? isStreaming === true;
-  const questionState = questionnaire === null ? null : askUserQuestionState(result, questionLive);
+  const questionState = questionnaire === null ? null : askUserQuestionState(questionnaire, result, questionLive);
   // The card already says what came back, so the result's envelope underneath it
   // would print the same answer twice.
   const hidesResult = questionnaire !== null && askUserQuestionHidesResult(result);

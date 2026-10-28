@@ -1241,7 +1241,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   // message's own stream is only the fallback, so a message that outlived its run
   // never keeps reading `waiting`.
   const questionLive = isRunActive ?? isStreaming === true;
-  const questionState = questionnaire === null ? null : askUserQuestionState(result, questionLive);
+  const questionState = questionnaire === null ? null : askUserQuestionState(questionnaire, result, questionLive);
   // The card already says what came back, so the result's envelope underneath it
   // would print the same answer twice. Guarded by the card's own view: another
   // tool's result may carry an `answers` list of its own.

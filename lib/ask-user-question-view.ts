@@ -86,17 +86,27 @@ export function parseAskUserQuestion(call: { toolName: string; input: unknown; r
   return questions;
 }
 
-/** One answer's choice: the option labels it picked and the text typed alongside them. */
+/**
+ * One answer's choice: the option labels it picked and the text typed alongside
+ * them. A label the question does not offer is not one of them: the extension only
+ * ever answers with a label it offered, so an entry naming another one names a
+ * choice nobody could have made, and every reader below drops it here.
+ */
 interface AnswerChoice {
   labels: string[];
   custom: string | null;
 }
 
-/** What one answer reads as, whatever its `kind`, in the shape every reader below takes. */
-function readAnswer(answer: Record<string, unknown>): AnswerChoice {
+/**
+ * What one answer reads as, whatever its `kind`, in the shape every reader below
+ * takes. `question` is the one the entry answers — the source of the labels it
+ * could have named — and an entry read without one names no label at all.
+ */
+function readAnswer(answer: Record<string, unknown>, question: AskUserQuestionQuestion | undefined): AnswerChoice {
+  const offered = (label: string) => question !== undefined && question.options.some((option) => option.label === label);
   if (answer.kind === "multi") {
     const labels = Array.isArray(answer.selected)
-      ? answer.selected.filter((label): label is string => typeof label === "string" && label.length > 0)
+      ? answer.selected.filter((label): label is string => typeof label === "string" && label.length > 0 && offered(label))
       : [];
     return { labels, custom: typeof answer.answer === "string" && answer.answer ? answer.answer : null };
   }
@@ -104,15 +114,15 @@ function readAnswer(answer: Record<string, unknown>): AnswerChoice {
     return { labels: [], custom: typeof answer.answer === "string" && answer.answer ? answer.answer : null };
   }
   if (answer.kind === "option" && typeof answer.answer === "string" && answer.answer) {
-    return { labels: [answer.answer], custom: null };
+    return { labels: offered(answer.answer) ? [answer.answer] : [], custom: null };
   }
   return { labels: [], custom: null };
 }
 
 /**
- * Whether a choice names nothing: no label picked and no text typed. This is the
- * one definition of a blank answer, so the collapsed row's answer slot and the
- * expanded body's `unanswered` mark cannot disagree about the same entry.
+ * Whether a choice names nothing: no label the question offers and no text typed.
+ * This is the one definition of a blank answer, so the collapsed row's answer slot
+ * and the expanded body's `unanswered` mark cannot disagree about the same entry.
  */
 function isBlankChoice(choice: AnswerChoice): boolean {
   return choice.labels.length === 0 && choice.custom === null;
@@ -159,17 +169,22 @@ function isErrorResult(result: { details?: unknown; isError?: boolean }): boolea
 
 /**
  * Where the call stands. A result that came back is `answered` — its `label` is
- * what the first question got, `null` when it was left blank or when the result
- * is an error — or `declined` when the user dismissed the questionnaire. With no
- * result, `isLive` decides between a call the run is still waiting on (`waiting`)
- * and one on a run that ended without pi writing a result (`unfinished`, i.e. the
- * run was interrupted).
+ * what the first question got, `null` when it was left blank, named a choice the
+ * question does not offer, or when the result is an error — or `declined` when the
+ * user dismissed the questionnaire. With no result, `isLive` decides between a call
+ * the run is still waiting on (`waiting`) and one on a run that ended without pi
+ * writing a result (`unfinished`, i.e. the run was interrupted).
+ *
+ * `questions` is the questionnaire the call carried, so the answer slot reads what
+ * the first question could have been answered with: a label no option offers names
+ * nothing, exactly as the expanded body reads it.
  *
  * `isLive` is the run, not just the streaming message: the assistant message
  * that carries a questionnaire call ends (and its tool starts) before the answer
  * arrives, so a streaming-only flag would read `unfinished` throughout the wait.
  */
 export function askUserQuestionState(
+  questions: readonly AskUserQuestionQuestion[],
   result: { details?: unknown; isError?: boolean } | undefined,
   isLive: boolean,
 ): AskUserQuestionState {
@@ -188,7 +203,7 @@ export function askUserQuestionState(
   const first = isRecord(details) && Array.isArray(details.answers)
     ? details.answers.find((answer) => isRecord(answer) && answer.questionIndex === 0)
     : undefined;
-  return { kind: "answered", label: first && isRecord(first) ? answerLabel(readAnswer(first)) : null };
+  return { kind: "answered", label: first && isRecord(first) ? answerLabel(readAnswer(first, questions[0])) : null };
 }
 
 /**
@@ -264,7 +279,8 @@ export interface AskUserQuestionBlock {
   note: string | null;
   /**
    * A non-cancelled result came back with nothing for this question: no entry at
-   * all, or an entry that names no choice — no label and no typed text.
+   * all, or an entry that names no choice — no label the question offers and no
+   * typed text.
    */
   unanswered: boolean;
   /** The chosen single-select option's preview Markdown; null when the answer has none. */
@@ -313,15 +329,16 @@ export function askUserQuestionBlocks(
     if (!isRecord(answer)) {
       return { question, selected: [], custom: null, note: null, unanswered: submitted, preview: null };
     }
-    const choice = readAnswer(answer);
+    const choice = readAnswer(answer, question);
     return {
       question,
       selected: choice.labels,
       custom: choice.custom,
       note: typeof answer.notes === "string" && answer.notes ? answer.notes : null,
-      // An entry that names no choice is the blank the collapsed row's answer slot
-      // reads `unanswered` for, so the body says the same rather than drawing an
-      // unticked list that looks answered — one predicate, `isBlankChoice()`.
+      // An entry that names no choice — no label the question offers and nothing
+      // typed — is the blank the collapsed row's answer slot reads `unanswered` for,
+      // so the body says the same rather than drawing an unticked list that looks
+      // answered — one predicate, `isBlankChoice()`, over one `readAnswer()`.
       unanswered: submitted && isBlankChoice(choice),
       preview: chosenPreview(answer.kind === "option" ? choice.labels[0] : undefined, question),
     };
