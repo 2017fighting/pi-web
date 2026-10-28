@@ -153,3 +153,22 @@ export function collapsesProcessDetails(answer: AssistantMessage | null): boolea
     block.type === "image" || (block.type === "text" && block.text.trim().length > 0)
   ));
 }
+
+/**
+ * The message the live run owns: its last assistant message. The assistant
+ * message carrying a tool call ends, and its tool starts, before the tool
+ * answers, so a call the run is still waiting on sits there — after a steer
+ * opened a later group as well, which the live tail alone does not cover. -1
+ * when no run is live, or when the live run is not running a tool: then a
+ * result-less call is the leftover of a run that ended without writing a result.
+ */
+export function liveRunMessageIndex(
+  messages: readonly { role?: AgentMessage["role"] }[],
+  { runActive, toolRunning }: { runActive: boolean; toolRunning: boolean },
+): number {
+  if (!runActive || !toolRunning) return -1;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === "assistant") return index;
+  }
+  return -1;
+}
