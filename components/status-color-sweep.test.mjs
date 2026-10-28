@@ -103,7 +103,7 @@ const jiti = createJiti(import.meta.url, { tsconfigPaths: true, jsx: { runtime: 
 const React = await jiti.import("react");
 const { renderToStaticMarkup } = await jiti.import("react-dom/server");
 const { I18nProvider } = await jiti.import("@/hooks/useI18n");
-const { ChatInput, ModelErrorBanner } = await jiti.import("./ChatInput.tsx");
+const { ChatInput, ModelErrorBanner, ModelScopeWarningBanner } = await jiti.import("./ChatInput.tsx");
 const { ThinkingIcon } = await jiti.import("./ThinkingIcon.tsx");
 const { TreeNode } = await jiti.import("./FileExplorer.tsx");
 const { statusColor } = await jiti.import("./AgentSessionPanel.tsx");
@@ -121,10 +121,29 @@ test("the composer's error chrome draws the error token", () => {
   const banner = render(React.createElement(ModelErrorBanner, { error: "models.json is unreadable" }));
   assert.match(banner, /var\(--error\)/);
   assert.doesNotMatch(banner, /rgba\(239,68,68|#ef4444/);
+  // One wash, two weights: the line carries 30% of the token, the fill 7%.
+  assert.match(banner, /border:1px solid color-mix\(in srgb, var\(--error\) 30%, transparent\)/);
+  assert.match(banner, /background:color-mix\(in srgb, var\(--error\) 7%, transparent\)/);
+
+  const warning = render(React.createElement(ModelScopeWarningBanner, { warnings: ['No models match pattern "ghost-gateway/*"'] }));
+  assert.match(warning, /border:1px solid color-mix\(in srgb, var\(--warning\) 30%, transparent\)/);
+  assert.match(warning, /background:color-mix\(in srgb, var\(--warning\) 7%, transparent\)/);
 
   const streaming = render(React.createElement(ChatInput, { onSend() {}, onAbort() {}, isStreaming: true }));
   assert.match(streaming, /var\(--error\)/);
   assert.doesNotMatch(streaming, /rgba\(239,68,68|#ef4444/);
+  // Stop's chrome stays a fainter error wash than the notices'.
+  assert.match(streaming, /background:color-mix\(in srgb, var\(--error\) 8%, transparent\)/);
+  assert.match(streaming, /border:1px solid color-mix\(in srgb, var\(--error\) 30%, transparent\)/);
+
+  const compactFailed = render(React.createElement(ChatInput, {
+    onSend() {},
+    onAbort() {},
+    onCompact() {},
+    compactError: "Summarization failed: generation hit the token cap",
+  }));
+  assert.match(compactFailed, /background:color-mix\(in srgb, var\(--error\) 7%, transparent\)/);
+  assert.match(compactFailed, /border:1px solid color-mix\(in srgb, var\(--error\) 30%, transparent\)/);
 });
 
 test("the file explorer draws a deleted file's badge from the error token", () => {

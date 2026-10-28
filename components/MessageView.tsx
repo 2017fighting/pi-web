@@ -26,7 +26,7 @@ import { CodemodeCallList } from "./CodemodeToolView";
 import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { mcpToolLabel, prettyMcpResultText } from "@/lib/mcp-tool-display";
-import { STATUS_WARNING_COLOR, statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor } from "@/lib/status-colors";
+import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, STATUS_WARNING_COLOR, statusBorder, statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor, statusWash } from "@/lib/status-colors";
 import { streamRateKey, streamRateStart, streamTokensPerSecond, type StreamRateStart } from "@/lib/stream-token-rate";
 import { getTranscriptNotices } from "@/lib/transcript-notices";
 import { transcriptNoticeText } from "@/components/TranscriptNotices";
@@ -889,10 +889,10 @@ function AssistantMessageView({
           style={{
             marginTop: blocks.length > 0 ? 8 : 0,
             padding: "7px 10px",
-            border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
+            border: statusBorder(STATUS_ERROR_COLOR, 30),
             borderRadius: 6,
-            background: "color-mix(in srgb, var(--error) 7%, transparent)",
-            color: "var(--error)",
+            background: statusWash(STATUS_ERROR_COLOR, 7),
+            color: STATUS_ERROR_COLOR,
             fontFamily: "var(--font-mono)",
             fontSize: 12,
             lineHeight: 1.5,
@@ -910,10 +910,10 @@ function AssistantMessageView({
           style={{
             marginTop: blocks.length > 0 || providerError ? 8 : 0,
             padding: "7px 10px",
-            border: "1px solid color-mix(in srgb, var(--warning) 30%, transparent)",
+            border: statusBorder(STATUS_WARNING_COLOR, 30),
             borderRadius: 6,
-            background: "color-mix(in srgb, var(--warning) 7%, transparent)",
-            color: "var(--warning)",
+            background: statusWash(STATUS_WARNING_COLOR, 7),
+            color: STATUS_WARNING_COLOR,
             fontFamily: "var(--font-mono)",
             fontSize: 12,
             lineHeight: 1.5,
@@ -1626,9 +1626,9 @@ function SplitDiffHeader({ title, side }: { title: string; side: "left" | "right
 function SplitDiffCellView({ cell, side }: { cell: SplitDiffCell; side: "left" | "right" }) {
   const bg =
     cell.type === "added"
-      ? "color-mix(in srgb, var(--success) 12%, transparent)"
+      ? statusWash(STATUS_SUCCESS_COLOR, 12)
       : cell.type === "removed"
-      ? "color-mix(in srgb, var(--error) 13%, transparent)"
+      ? statusWash(STATUS_ERROR_COLOR, 13)
       : cell.type === "empty"
       ? "var(--bg-subtle)"
       : "transparent";
@@ -1700,8 +1700,8 @@ function PatchTextView({ text }: { text: string }) {
           line.startsWith("-") && !line.startsWith("---") ? "removed" :
           "context";
         const bg =
-          kind === "added" ? "color-mix(in srgb, var(--success) 12%, transparent)" :
-          kind === "removed" ? "color-mix(in srgb, var(--error) 13%, transparent)" :
+          kind === "added" ? statusWash(STATUS_SUCCESS_COLOR, 12) :
+          kind === "removed" ? statusWash(STATUS_ERROR_COLOR, 13) :
           kind === "hunk" ? "rgba(96,165,250,0.12)" :
           "transparent";
         const color =
@@ -1849,7 +1849,7 @@ function PairedResult({ text, isEmpty, isError }: {
     <div
       style={{
         borderTop: statusResultBorder(isError),
-        background: isError ? "color-mix(in srgb, var(--error) 4%, transparent)" : "var(--bg-subtle)",
+        background: isError ? statusWash(STATUS_ERROR_COLOR, 4) : "var(--bg-subtle)",
       }}
     >
       <pre

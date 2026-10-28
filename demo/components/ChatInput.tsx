@@ -28,6 +28,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useI18n } from "@/hooks/useI18n";
 import { useChatAppearance } from "@/hooks/useChatAppearance";
 import type { ToolPreset } from "@/lib/tool-presets";
+import { STATUS_ERROR_COLOR, STATUS_WARNING_COLOR, statusBorder, statusWash } from "@/lib/status-colors";
 import { ModelSelector, type ModelSelectorOption } from "./ModelSelector";
 
 export { filterModelOptions } from "./ModelSelector";
@@ -455,7 +456,7 @@ function QueuedMessageRow({ kind, text }: { kind: "steer" | "follow-up"; text: s
 }
 
 function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "warning"; title: string; body: string; onClose?: () => void }) {
-  const color = tone === "error" ? "var(--error)" : "var(--warning)";
+  const color = tone === "error" ? STATUS_ERROR_COLOR : STATUS_WARNING_COLOR;
   return (
     <div
       role="alert"
@@ -467,9 +468,9 @@ function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "wa
         marginBottom: 8,
         padding: "7px 10px",
         overflowY: "auto",
-        border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
+        border: statusBorder(color, 30),
         borderRadius: 6,
-        background: `color-mix(in srgb, ${color} 7%, transparent)`,
+        background: statusWash(color, 7),
         color,
         fontSize: 11,
         lineHeight: 1.45,
@@ -1725,10 +1726,10 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
             style={{
               marginBottom: 8,
               padding: "7px 10px",
-              background: "color-mix(in srgb, var(--error) 7%, transparent)",
-              border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
+              background: statusWash(STATUS_ERROR_COLOR, 7),
+              border: statusBorder(STATUS_ERROR_COLOR, 30),
               borderRadius: 6,
-              color: "var(--error)",
+              color: STATUS_ERROR_COLOR,
               fontFamily: "var(--font-mono)",
               fontSize: 12,
               lineHeight: 1.5,
@@ -2596,22 +2597,22 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                     padding: isMobile ? "0 6px" : "8px 12px",
                     width: isMobile ? "auto" : undefined,
                     height: 32,
-                    background: isCompacting ? "color-mix(in srgb, var(--error) 8%, transparent)" : "none",
+                    background: isCompacting ? statusWash(STATUS_ERROR_COLOR, 8) : "none",
                     border: "none",
                     borderRadius: 9,
-                    color: isCompacting ? "var(--error)" : "var(--text-muted)",
+                    color: isCompacting ? STATUS_ERROR_COLOR : "var(--text-muted)",
                     cursor: (isStreaming && !isCompacting) ? "not-allowed" : "pointer",
                     fontSize: 12, opacity: (isStreaming && !isCompacting) ? 0.5 : 1,
                     transition: "background 0.12s, color 0.12s",
                   }}
                   onMouseEnter={(e) => {
                     if (isStreaming && !isCompacting) return;
-                    e.currentTarget.style.background = isCompacting ? "color-mix(in srgb, var(--error) 16%, transparent)" : "var(--bg-hover)";
-                    e.currentTarget.style.color = isCompacting ? "var(--error)" : "var(--text)";
+                    e.currentTarget.style.background = isCompacting ? statusWash(STATUS_ERROR_COLOR, 16) : "var(--bg-hover)";
+                    e.currentTarget.style.color = isCompacting ? STATUS_ERROR_COLOR : "var(--text)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = isCompacting ? "color-mix(in srgb, var(--error) 8%, transparent)" : "none";
-                    e.currentTarget.style.color = isCompacting ? "var(--error)" : "var(--text-muted)";
+                    e.currentTarget.style.background = isCompacting ? statusWash(STATUS_ERROR_COLOR, 8) : "none";
+                    e.currentTarget.style.color = isCompacting ? STATUS_ERROR_COLOR : "var(--text-muted)";
                   }}
                    title={isCompacting ? t("chat.stopCompaction") : t("chat.compactContext")}
                    aria-label={isCompacting ? t("chat.stopCompaction") : t("chat.compactContext")}
@@ -2636,17 +2637,17 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                   display: "flex", alignItems: "center", gap: 6,
                   padding: "8px 14px",
                   height: 32,
-                  background: "color-mix(in srgb, var(--error) 8%, transparent)",
-                  border: "1px solid color-mix(in srgb, var(--error) 30%, transparent)",
+                  background: statusWash(STATUS_ERROR_COLOR, 8),
+                  border: statusBorder(STATUS_ERROR_COLOR, 30),
                   borderRadius: 9,
-                  color: "var(--error)",
+                  color: STATUS_ERROR_COLOR,
                   cursor: "pointer",
                   fontSize: 12, fontWeight: 600,
                   whiteSpace: "nowrap", letterSpacing: "-0.01em",
                   transition: "background 0.12s",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "color-mix(in srgb, var(--error) 16%, transparent)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "color-mix(in srgb, var(--error) 8%, transparent)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = statusWash(STATUS_ERROR_COLOR, 16); }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = statusWash(STATUS_ERROR_COLOR, 8); }}
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <rect x="1.5" y="1.5" width="7" height="7" rx="1.5" fill="currentColor" />
