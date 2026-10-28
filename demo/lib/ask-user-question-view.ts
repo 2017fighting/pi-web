@@ -8,6 +8,7 @@
  * incomplete JSON and are never parsed into a card that would change shape on
  * every chunk.
  */
+import type { Translate } from "@/lib/i18n/types";
 
 export const ASK_USER_QUESTION_TOOL_NAME = "ask_user_question";
 
@@ -29,9 +30,6 @@ export interface AskUserQuestionQuestion {
   /** Whether more than one option may be chosen. */
   multiSelect: boolean;
 }
-
-/** The i18n translate function shape this module needs. */
-export type Translate = (key: string, params?: Record<string, string | number>) => string;
 
 /**
  * Where an `ask_user_question` call stands: what came back, or — with no result
