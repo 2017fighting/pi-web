@@ -8,7 +8,7 @@ import type { AgentMessage, AssistantContentBlock, AssistantMessage, BashExecuti
 import { normalizeCustomPanelLines } from "@/lib/ansi";
 import { EXTENSION_DIALOG_BASE_WIDTH, fitExtensionDialogWidth } from "@/lib/extension-dialog-fit";
 import { asBracketedPaste, toTerminalKeyData } from "@/lib/terminal-input";
-import { countToolCallBlocks, getAssistantErrorMessage, getDisplayableAssistantBlocks, hasAssistantAnswer, isAssistantTruncated, isMessageGroupAnchor, liveRunMessageIndex, splitFinalAssistantBlocks } from "@/lib/message-display";
+import { countToolCallBlocks, getAssistantErrorMessage, getDisplayableAssistantBlocks, hasAssistantAnswer, isAssistantTruncated, isMessageGroupAnchor, liveRunMessageIndex, liveToolCallMessageIndexes, splitFinalAssistantBlocks } from "@/lib/message-display";
 import { extractTurnWrittenFiles, type WrittenFile } from "@/lib/turn-written-files";
 import { buildQuotedSelection } from "@/lib/quoted-selection";
 import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, STATUS_WARNING_COLOR } from "@/lib/status-colors";
@@ -744,6 +744,12 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
   const { isDragOver, handleDragEnter, handleDragOver, handleDragLeave, handleDrop } = useDragDrop(onDrop);
 
   const visibleMessages = messages.filter((m) => isMessageGroupAnchor(m) || m.role === "assistant");
+  // The calls the live run is running right now, whose cards are still waiting on a
+  // person. Stable identity: a new Set on every render would defeat MessageView's memo().
+  const runningToolCallIds = useMemo(
+    () => new Set(agentPhase?.kind === "running_tools" ? agentPhase.tools.map((tool) => tool.id) : []),
+    [agentPhase],
+  );
   // Stable Map identity: `messages` doesn't change during streaming updates
   // (the streaming message lives in streamState), so memoized MessageViews
   // skip re-rendering on every message_update event. An inline `new Map()`
@@ -1057,6 +1063,11 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
                 runActive: agentRunning,
                 toolRunning: agentPhase?.kind === "running_tools",
               });
+              // A call the run is running right now keeps its card waiting on a
+              // person even when its message is no longer the transcript's last
+              // assistant message (a steer opened a later group). See
+              // `liveToolCallMessageIndexes()`.
+              const liveToolCallIdxs = liveToolCallMessageIndexes(messages, runningToolCallIds);
 
               const renderMessage = (idx: number, options: { attachRef?: boolean; keyPrefix?: string; messageOverride?: AgentMessage; showTimestamp?: boolean; writtenFiles?: WrittenFile[]; recoverTruncation?: boolean; isRunActive?: boolean } = {}): ReactNode => {
                 const msg = options.messageOverride ?? messages[idx];
@@ -1083,7 +1094,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
                     key={`${keyPrefix}-view-${messageKey}`}
                     message={msg}
                     toolResults={toolResultsMap}
-                    isRunActive={options.isRunActive ?? (idx === liveRunIdx)}
+                    isRunActive={options.isRunActive ?? (idx === liveRunIdx || liveToolCallIdxs.has(idx))}
                     modelNames={modelNames}
                     cwd={messageCwd}
                     onOpenFile={onOpenFile}

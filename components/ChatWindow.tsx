@@ -8,7 +8,7 @@ import { normalizeCustomPanelLines } from "@/lib/ansi";
 import { splitNoticeText } from "@/lib/notice-text";
 import { EXTENSION_DIALOG_BASE_WIDTH, fitExtensionDialogWidth } from "@/lib/extension-dialog-fit";
 import { asBracketedPaste, toTerminalKeyData } from "@/lib/terminal-input";
-import { collapsesProcessDetails, countToolCallBlocks, getDisplayableAssistantBlocks, hasAssistantAnswer, isHiddenCustomMessage, isMessageGroupAnchor, liveRunMessageIndex, splitFinalAssistantBlocks } from "@/lib/message-display";
+import { collapsesProcessDetails, countToolCallBlocks, getDisplayableAssistantBlocks, hasAssistantAnswer, isHiddenCustomMessage, isMessageGroupAnchor, liveRunMessageIndex, liveToolCallMessageIndexes, splitFinalAssistantBlocks } from "@/lib/message-display";
 import { extractTurnWrittenFiles, type WrittenFile } from "@/lib/turn-written-files";
 import { getFinalAnswerViews, keepWrittenFiles, type FinalAnswerViews } from "@/lib/turn-views";
 import { formatTurnDuration, getTurnDurationMs } from "@/lib/turn-duration";
@@ -822,6 +822,12 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
     }
     return map;
   }, [activeToolResults, messages]);
+  // The calls the live run is running right now, whose cards are still waiting on a
+  // person. Stable identity: a new Set on every render would defeat MessageView's memo().
+  const runningToolCallIds = useMemo(
+    () => new Set(agentPhase?.kind === "running_tools" ? agentPhase.tools.map((tool) => tool.id) : []),
+    [agentPhase],
+  );
   // Same idea for the copies a grouped turn passes MessageView (see getFinalAnswerViews).
   const finalAnswerViewCache = useMemo(() => new WeakMap<AssistantMessage, FinalAnswerViews>(), []);
   const inputHistory = useMemo(() => {
@@ -1131,6 +1137,11 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
                 runActive: agentRunning,
                 toolRunning: agentPhase?.kind === "running_tools",
               });
+              // A call the run is running right now keeps its card waiting on a
+              // person even when its message is no longer the transcript's last
+              // assistant message (a steer opened a later group). See
+              // `liveToolCallMessageIndexes()`.
+              const liveToolCallIdxs = liveToolCallMessageIndexes(messages, runningToolCallIds);
 
               const renderMessage = (idx: number, options: { attachRef?: boolean; keyPrefix?: string; messageOverride?: AgentMessage; showTimestamp?: boolean; writtenFiles?: WrittenFile[]; recoverTruncation?: boolean; turnDurationMs?: number; withNotices?: boolean; isRunActive?: boolean } = {}): ReactNode => {
                 const msg = options.messageOverride ?? messages[idx];
@@ -1162,7 +1173,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
                     key={`${keyPrefix}-view-${messageKey}`}
                     message={msg}
                     toolResults={toolResultsMap}
-                    isRunActive={options.isRunActive ?? (idx === liveRunIdx)}
+                    isRunActive={options.isRunActive ?? (idx === liveRunIdx || liveToolCallIdxs.has(idx))}
                     modelNames={modelNames}
                     cwd={messageCwd}
                     onOpenFile={onOpenFile}
