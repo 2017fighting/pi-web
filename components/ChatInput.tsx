@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useRef, useState, useCallback, useEffect, useLayoutEffect, useImperativeHandle, forwardRef, KeyboardEvent } from "react";
+import type { Translate } from "@/lib/i18n/types";
 import type { BuiltinSlashCommandResult, CompactResultInfo, QueuedMessages, SlashCommandInfo } from "@/hooks/useAgentSession";
 import type { SkillsResponse } from "@/lib/api-types";
 import type { TextContent, UserMessage } from "@/lib/types";
@@ -377,7 +378,7 @@ const SLASH_SOURCE_ORDER: Record<SlashCommandSource, number> = {
   skill: 3,
 };
 
-function slashMatchRank(command: SlashCommandPaletteItem, query: string, t: (key: string) => string): number {
+function slashMatchRank(command: SlashCommandPaletteItem, query: string, t: Translate): number {
   const name = command.name.toLowerCase();
   const description = getSlashDescription(command, t).toLowerCase();
   if (name === query) return 0;
@@ -387,7 +388,7 @@ function slashMatchRank(command: SlashCommandPaletteItem, query: string, t: (key
   return 4;
 }
 
-function getSlashDescription(command: SlashCommandPaletteItem, t: (key: string) => string): string {
+function getSlashDescription(command: SlashCommandPaletteItem, t: Translate): string {
   return command.source === "builtin" ? t(command.description) : command.description ?? "";
 }
 
