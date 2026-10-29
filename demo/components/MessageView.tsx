@@ -1582,7 +1582,7 @@ function PatchTextView({ text }: { text: string }) {
         const bg =
           kind === "added" ? statusWash(STATUS_SUCCESS_COLOR, 12) :
           kind === "removed" ? statusWash(STATUS_ERROR_COLOR, 13) :
-          kind === "hunk" ? "rgba(96,165,250,0.12)" :
+          kind === "hunk" ? "color-mix(in srgb, var(--accent) 12%, transparent)" :
           "transparent";
         const color =
           kind === "added" ? "var(--success)" :
