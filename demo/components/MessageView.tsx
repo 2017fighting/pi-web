@@ -15,7 +15,7 @@ import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatc
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, STATUS_WARNING_COLOR, statusBorder, statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor, statusWash } from "@/lib/status-colors";
-import { askUserQuestionBlocks, askUserQuestionFailed, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
+import { ASK_USER_QUESTION_SUMMARY_SEPARATOR, askUserQuestionBlocks, askUserQuestionFailed, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
@@ -1225,7 +1225,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
             {isStreamingInput ? t("chat.generatingToolInput") : questionSummary !== null ? (
               <>
                 {questionSummary.header && <span style={QUESTION_CHIP_STYLE}>{questionSummary.header}</span>}
-                {questionSummary.header ? ` · ${questionSummary.detail}` : questionSummary.detail}
+                {questionSummary.header ? `${ASK_USER_QUESTION_SUMMARY_SEPARATOR}${questionSummary.detail}` : questionSummary.detail}
               </>
             ) : cardPreview}
           </span>

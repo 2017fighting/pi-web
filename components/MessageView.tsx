@@ -14,7 +14,7 @@ import { formatTurnDuration } from "@/lib/turn-duration";
 import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, type SplitDiffFile, type SplitDiffGap, type UnifiedDiffLine } from "@/lib/patch";
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
-import { askUserQuestionBlocks, askUserQuestionFailed, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
+import { ASK_USER_QUESTION_SUMMARY_SEPARATOR, askUserQuestionBlocks, askUserQuestionFailed, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
@@ -1334,7 +1334,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
             {isStreamingInput ? t("chat.generatingToolInput") : questionSummary !== null ? (
               <>
                 {questionSummary.header && <span style={QUESTION_CHIP_STYLE}>{questionSummary.header}</span>}
-                {questionSummary.header ? ` · ${questionSummary.detail}` : questionSummary.detail}
+                {questionSummary.header ? `${ASK_USER_QUESTION_SUMMARY_SEPARATOR}${questionSummary.detail}` : questionSummary.detail}
               </>
             ) : cardPreview}
           </span>

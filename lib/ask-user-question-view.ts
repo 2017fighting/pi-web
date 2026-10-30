@@ -32,6 +32,16 @@ export interface AskUserQuestionQuestion {
 }
 
 /**
+ * The part of a tool result the card reads: whether pi flagged the call as
+ * failed, and the `details` the extension wrote beside it. Every reader below
+ * takes one, so the shape is named once instead of spelled in each signature.
+ */
+export interface AskUserQuestionResult {
+  details?: unknown;
+  isError?: boolean;
+}
+
+/**
  * Where an `ask_user_question` call stands: what came back, or — with no result
  * yet — whether the message is still waiting on the user or was interrupted
  * before pi wrote one.
@@ -173,7 +183,7 @@ function isDeclinedResult(details: unknown): boolean {
  * never showed the questionnaire. Either way the answer slot reads `unanswered`
  * and the result's text is the whole message, so the card keeps it.
  */
-function isErrorResult(result: { details?: unknown; isError?: boolean }): boolean {
+function isErrorResult(result: AskUserQuestionResult): boolean {
   return result.isError === true || resultError(result.details) !== null;
 }
 
@@ -195,7 +205,7 @@ function isErrorResult(result: { details?: unknown; isError?: boolean }): boolea
  */
 export function askUserQuestionState(
   questions: readonly AskUserQuestionQuestion[],
-  result: { details?: unknown; isError?: boolean } | undefined,
+  result: AskUserQuestionResult | undefined,
   isLive: boolean,
 ): AskUserQuestionState {
   if (!result) return isLive ? { kind: "waiting" } : { kind: "unfinished" };
@@ -222,7 +232,7 @@ export function askUserQuestionState(
  * — `no_ui`, `no_custom_ui` and the argument failures, which it raises before the
  * first question is shown. That text is the whole message, so the card keeps it.
  */
-export function askUserQuestionFailed(result: { details?: unknown; isError?: boolean } | undefined): boolean {
+export function askUserQuestionFailed(result: AskUserQuestionResult | undefined): boolean {
   return result !== undefined && isErrorResult(result);
 }
 
@@ -239,7 +249,7 @@ export function askUserQuestionFailed(result: { details?: unknown; isError?: boo
  */
 export function askUserQuestionHidesResult(
   questions: readonly AskUserQuestionQuestion[],
-  result: { details?: unknown; isError?: boolean } | undefined,
+  result: AskUserQuestionResult | undefined,
 ): boolean {
   if (!result || isErrorResult(result)) return false;
   const details = result.details;
@@ -282,6 +292,17 @@ export interface AskUserQuestionSummaryParts {
   detail: string;
 }
 
+/**
+ * What the row puts between the header chip and the detail. Named here so the
+ * row's one line is spelled once, whatever draws it.
+ */
+export const ASK_USER_QUESTION_SUMMARY_SEPARATOR = " · ";
+
+/** The summary as one line of text: the header chip's text, then the detail. */
+export function askUserQuestionSummaryText(parts: AskUserQuestionSummaryParts): string {
+  return parts.header ? `${parts.header}${ASK_USER_QUESTION_SUMMARY_SEPARATOR}${parts.detail}` : parts.detail;
+}
+
 /** The summary's two parts, for a view that draws the chip apart from the text. */
 export function askUserQuestionSummaryParts(
   questions: readonly AskUserQuestionQuestion[],
@@ -294,7 +315,7 @@ export function askUserQuestionSummaryParts(
   const answer = state.kind === "answered"
     ? state.label ?? t("askUserQuestion.unanswered")
     : t(STATE_KEY[state.kind]);
-  return { header: questions[0]?.header ?? "", detail: [count, answer].filter((part) => part).join(" · ") };
+  return { header: questions[0]?.header ?? "", detail: [count, answer].filter((part) => part).join(ASK_USER_QUESTION_SUMMARY_SEPARATOR) };
 }
 
 /**
@@ -345,7 +366,7 @@ function chosenPreview(label: string | undefined, question: AskUserQuestionQuest
  */
 export function askUserQuestionBlocks(
   questions: readonly AskUserQuestionQuestion[],
-  result: { details?: unknown; isError?: boolean } | undefined,
+  result: AskUserQuestionResult | undefined,
 ): AskUserQuestionBlock[] {
   const details = result?.details;
   const answers = isRecord(details) && Array.isArray(details.answers) ? details.answers : [];
