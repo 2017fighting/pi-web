@@ -12,16 +12,19 @@
  * spelled where the surface draws it, as is a mix of a token into a surface
  * (`var(--bg-panel)`, `var(--border)`).
  *
- * A diff row is the one surface whose whole status chrome is repeated: the
- * chat's split and one-column patches and the file viewer's diff draw the same
- * fill and marker colour, so `diffRowChrome()` names that pair once instead of
- * each view mixing the wash at its own weight. Its unchanged row's marker colour
- * is `var(--text-dim)`, a single token, but it is the same single token in all
- * three views and stays here with its wash.
+ * Two surfaces repeat their whole status chrome, so each has its builder here.
+ * A diff row draws the same fill and marker colour in the chat's split and
+ * one-column patches and in the file viewer's diff, so `diffRowChrome()` names
+ * that pair once instead of each view mixing the wash at its own weight; its
+ * unchanged row's marker colour is `var(--text-dim)`, a single token, but it is
+ * the same single token in all three views and stays here with its wash.
  *
- * The file viewer's live indicator repeats the same way: each of its five
- * headers names the same caption colour, dot fill and glow, so
- * `liveDotChrome()` keeps that whole trio in one place.
+ * The file viewer's five headers draw the same live indicator, so
+ * `liveDotChrome()` holds its caption colour, dot fill and glow. The rest of the
+ * indicator stays with each header, because the markup differs: the four
+ * labelled headers wrap a `7px` circle and print `live` / `static` beside it,
+ * while the diff header's dot takes its size from `.file-viewer-live-indicator`
+ * and carries those words as an `aria-label` only.
  */
 
 /** A passed state's color: a tool's name, a status dot or label. */

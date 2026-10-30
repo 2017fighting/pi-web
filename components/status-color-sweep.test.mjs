@@ -134,9 +134,13 @@ test("every diff view draws its rows from the one chrome helper", () => {
 // Ticket #20: a file view's live indicator — the caption's colour, the dot's
 // fill and its glow while watching — was five identical copies in each viewer.
 // `liveDotChrome()` in `lib/status-colors.ts` names that trio once, and every
-// header of both viewers reads it.
+// header of both viewers reads it. The dot's `7px` frame and its caption stay
+// with each header, so those are what this pin leaves alone.
 const LIVE_DOT_SOURCES = ["components/FileViewer.tsx", "demo/components/FileViewer.tsx"];
-const HAND_WRITTEN_LIVE_DOT = /watching \? "var\(--success\)" : "var\(--(?:border|text-dim)\)"|boxShadow: watching \?/;
+// A style value chosen from `watching`, however the token is spelled (the quoted
+// literal or the `STATUS_*_COLOR` name), and the glow's own literal.
+const HAND_WRITTEN_LIVE_DOT =
+  /(?:color|background|boxShadow): watching \?|watching \? (?:STATUS_SUCCESS_COLOR|STATUS_ERROR_COLOR|STATUS_WARNING_COLOR|"var\(--)/;
 // The image, audio and video previews, the document preview and the diff header.
 const LIVE_DOT_HEADERS = 5;
 
@@ -144,6 +148,7 @@ test("both file viewers draw their live indicator from the one chrome helper", (
   for (const file of LIVE_DOT_SOURCES) {
     const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
     assert.doesNotMatch(source, HAND_WRITTEN_LIVE_DOT, `${file} spells the live indicator's chrome again`);
+    assert.doesNotMatch(source, /0 0 4px/, `${file} writes the watching dot's glow by hand`);
     assert.equal(
       source.match(/liveDotChrome\(/g)?.length,
       LIVE_DOT_HEADERS,
