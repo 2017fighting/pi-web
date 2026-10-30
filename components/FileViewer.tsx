@@ -36,6 +36,7 @@ import {
   type FileViewerDisplayMode as DisplayMode,
   type FileViewerState,
 } from "@/lib/file-viewer-state";
+import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, statusWash } from "@/lib/status-colors";
 
 export type { FileViewerState } from "@/lib/file-viewer-state";
 
@@ -383,11 +384,12 @@ function DiffView({ patch }: { patch: string }) {
           return result;
         }
         const lines = seg.lines.map((line, li) => {
+          // The same washes the chat's diff rows draw, from the status tokens.
           const bg =
             line.type === "added"
-              ? "rgba(0,200,80,0.12)"
+              ? statusWash(STATUS_SUCCESS_COLOR, 12)
               : line.type === "removed"
-              ? "rgba(240,60,60,0.14)"
+              ? statusWash(STATUS_ERROR_COLOR, 13)
               : "transparent";
           const prefix =
             line.type === "added" ? "+" : line.type === "removed" ? "-" : " ";
