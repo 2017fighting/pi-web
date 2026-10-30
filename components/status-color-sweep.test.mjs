@@ -111,6 +111,26 @@ test("no component spells the status wash by hand", () => {
   }
 });
 
+// Ticket #19: a diff row's chrome — the added and removed washes at their one
+// weight pair, and the marker colours — is spelled once, by `diffRowChrome()`
+// in `lib/status-colors.ts`. Every view that draws diff rows imports it instead
+// of mixing the same wash at the same weight again.
+const DIFF_ROW_SOURCES = [
+  "components/MessageView.tsx",
+  "components/FileViewer.tsx",
+  "demo/components/MessageView.tsx",
+  "demo/components/FileViewer.tsx",
+];
+const DIFF_ROW_WASH = /statusWash\(STATUS_(?:SUCCESS|ERROR)_COLOR, 1[23]\)/;
+
+test("every diff view draws its rows from the one chrome helper", () => {
+  for (const file of DIFF_ROW_SOURCES) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+    assert.match(source, /diffRowChrome\(/, `${file} draws no diff row from diffRowChrome()`);
+    assert.doesNotMatch(source, DIFF_ROW_WASH, `${file} mixes a diff row's wash again`);
+  }
+});
+
 // Ticket #14 gave the thinking glyph its own token pair: its amber is not a
 // status colour, and it is the same in either theme, so it is defined once on
 // `:root` rather than per palette. Both copies draw it.

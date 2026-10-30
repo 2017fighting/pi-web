@@ -26,7 +26,7 @@ import { CodemodeCallList } from "./CodemodeToolView";
 import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
 import { mcpToolLabel, prettyMcpResultText } from "@/lib/mcp-tool-display";
-import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, STATUS_WARNING_COLOR, statusBorder, statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor, statusWash } from "@/lib/status-colors";
+import { STATUS_ERROR_COLOR, STATUS_WARNING_COLOR, diffRowChrome, statusBorder, statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor, statusWash } from "@/lib/status-colors";
 import { streamRateKey, streamRateStart, streamTokensPerSecond, type StreamRateStart } from "@/lib/stream-token-rate";
 import { getTranscriptNotices } from "@/lib/transcript-notices";
 import { transcriptNoticeText } from "@/components/TranscriptNotices";
@@ -1624,18 +1624,12 @@ function SplitDiffHeader({ title, side }: { title: string; side: "left" | "right
 }
 
 function SplitDiffCellView({ cell, side }: { cell: SplitDiffCell; side: "left" | "right" }) {
-  const bg =
-    cell.type === "added"
-      ? statusWash(STATUS_SUCCESS_COLOR, 12)
-      : cell.type === "removed"
-      ? statusWash(STATUS_ERROR_COLOR, 13)
-      : cell.type === "empty"
-      ? "var(--bg-subtle)"
-      : "transparent";
+  // An empty cell is the gap facing a line the other column has.
+  const chrome = diffRowChrome(cell.type === "empty" ? "context" : cell.type);
+  const bg = cell.type === "empty" ? "var(--bg-subtle)" : chrome.fill;
   const marker =
     cell.type === "added" ? "+" : cell.type === "removed" ? "-" : " ";
-  const markerColor =
-    cell.type === "added" ? "var(--success)" : cell.type === "removed" ? "var(--error)" : "var(--text-dim)";
+  const markerColor = chrome.prefixColor;
 
   return (
     <div
@@ -1699,16 +1693,14 @@ function PatchTextView({ text }: { text: string }) {
           line.startsWith("+") && !line.startsWith("+++") ? "added" :
           line.startsWith("-") && !line.startsWith("---") ? "removed" :
           "context";
+        const chrome = diffRowChrome(kind === "hunk" ? "context" : kind);
         const bg =
-          kind === "added" ? statusWash(STATUS_SUCCESS_COLOR, 12) :
-          kind === "removed" ? statusWash(STATUS_ERROR_COLOR, 13) :
           kind === "hunk" ? "color-mix(in srgb, var(--accent) 12%, transparent)" :
-          "transparent";
+          chrome.fill;
         const color =
-          kind === "added" ? "var(--success)" :
-          kind === "removed" ? "var(--error)" :
           kind === "hunk" ? "var(--accent)" :
-          "var(--text)";
+          kind === "context" ? "var(--text)" :
+          chrome.prefixColor;
 
         return (
           <div

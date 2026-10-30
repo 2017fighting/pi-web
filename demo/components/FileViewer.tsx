@@ -33,7 +33,7 @@ import {
   type FileViewerDisplayMode as DisplayMode,
   type FileViewerState,
 } from "@/lib/file-viewer-state";
-import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, statusWash } from "@/lib/status-colors";
+import { diffRowChrome } from "@/lib/status-colors";
 
 export type { FileViewerState } from "@/lib/file-viewer-state";
 
@@ -344,17 +344,10 @@ function DiffView({ patch }: { patch: string }) {
           return result;
         }
         const lines = seg.lines.map((line, li) => {
-          // The same washes the chat's diff rows draw, from the status tokens.
-          const bg =
-            line.type === "added"
-              ? statusWash(STATUS_SUCCESS_COLOR, 12)
-              : line.type === "removed"
-              ? statusWash(STATUS_ERROR_COLOR, 13)
-              : "transparent";
+          // The same chrome the chat's diff rows draw, from the same helper.
+          const { fill, prefixColor } = diffRowChrome(line.type);
           const prefix =
             line.type === "added" ? "+" : line.type === "removed" ? "-" : " ";
-          const prefixColor =
-            line.type === "added" ? "var(--success)" : line.type === "removed" ? "var(--error)" : "var(--text-dim)";
 
           return (
             <div
@@ -363,7 +356,7 @@ function DiffView({ patch }: { patch: string }) {
               style={{
                 display: "flex",
                 minWidth: "100%",
-                background: bg,
+                background: fill,
                 borderLeft: line.type === "added"
                   ? "3px solid var(--success)"
                   : line.type === "removed"

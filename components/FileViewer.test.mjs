@@ -111,11 +111,11 @@ test("the line-number gutter is pinned only in views of at most SOURCE_HIGHLIGHT
   const { outputText: diffOutput } = ts.transpileModule(`return ${diffView.getText(file)}`, { compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022 } });
   const diffNumberStyle = (rowCount) => {
     const added = Array.from({ length: rowCount }, (_, index) => ({ type: "added", text: "line", oldLineNo: null, newLineNo: index + 1 }));
-    // The row's wash comes from `lib/status-colors.ts`; its value is not what
-    // this test reads, so plain stand-ins stand in for the module's helpers.
-    const statusWash = (color, percent) => `wash-${color}-${percent}`;
-    const DiffView = new Function("React", "useI18n", "diffLines", "SOURCE_HIGHLIGHT_MAX_LINES", "FILE_CODE_STYLE", "FILE_LINE_NUMBER_STYLE", "FILE_PINNED_LINE_NUMBER_STYLE", "statusWash", "STATUS_SUCCESS_COLOR", "STATUS_ERROR_COLOR", diffOutput)(
-      React, () => ({ t: (key) => key }), () => added, maxRows, codeStyle, gutterStyle, pinnedStyle, statusWash, "success", "error",
+    // The row's chrome comes from `lib/status-colors.ts`; its value is not what
+    // this test reads, so plain stand-ins stand in for the module's helper.
+    const diffRowChrome = (kind) => ({ fill: `fill-${kind}`, prefixColor: `prefix-${kind}` });
+    const DiffView = new Function("React", "useI18n", "diffLines", "SOURCE_HIGHLIGHT_MAX_LINES", "FILE_CODE_STYLE", "FILE_LINE_NUMBER_STYLE", "FILE_PINNED_LINE_NUMBER_STYLE", "diffRowChrome", diffOutput)(
+      React, () => ({ t: (key) => key }), () => added, maxRows, codeStyle, gutterStyle, pinnedStyle, diffRowChrome,
     );
     return DiffView({ patch: "" }).props.children[0].props.children[0].props.children[0].props.style;
   };

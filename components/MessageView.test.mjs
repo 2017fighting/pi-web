@@ -1348,6 +1348,45 @@ test("the same patch in one column: no line twice, the removed line above what r
   assert.equal(countIn(split, "const keep = true;"), 2);
 });
 
+test("the split view and a result's plain patch draw a changed row's fill and marker from one chrome", () => {
+  // Both columns of an edited pair: the wash behind the line and the colour of
+  // its - / + marker, the same pair `diffRowChrome()` gives the file viewer.
+  const split = renderPatchFiles(parseUnifiedPatch(EDIT_PATCH), "split");
+  assert.match(split, /min-width:0;background:color-mix\(in srgb, var\(--error\) 13%, transparent\)/);
+  assert.match(split, /min-width:0;background:color-mix\(in srgb, var\(--success\) 12%, transparent\)/);
+  assert.match(split, /color:var\(--error\);user-select:none;font-weight:700;flex-shrink:0">-</);
+  assert.match(split, /color:var\(--success\);user-select:none;font-weight:700;flex-shrink:0">\+</);
+  // An unchanged line keeps the dim marker and no fill.
+  assert.match(split, /min-width:0;background:transparent;/);
+  assert.match(split, /color:var\(--text-dim\);user-select:none;font-weight:400;flex-shrink:0"> </);
+
+  // A patch that is not a unified diff renders as plain lines, each coloured
+  // whole; the added and removed ones take the same chrome.
+  const block = { type: "toolCall", toolCallId: "call-plain-patch", toolName: "bash", input: { command: "git diff" } };
+  const result = {
+    role: "toolResult",
+    toolCallId: block.toolCallId,
+    toolName: "bash",
+    content: [{ type: "text", text: "plain diff" }],
+    details: { diff: "unchanged\n+added line\n-removed line\n" },
+  };
+  setToolCallExpanded(block.toolCallId, true);
+  try {
+    const html = renderMessage(
+      { role: "assistant", provider: "anthropic", model: "claude-test", content: [block] },
+      { toolResults: new Map([[block.toolCallId, result]]) },
+    );
+    assert.match(html, /background:color-mix\(in srgb, var\(--success\) 12%, transparent\);border-left:3px solid var\(--success\)/);
+    assert.match(html, /background:color-mix\(in srgb, var\(--error\) 13%, transparent\);border-left:3px solid var\(--error\)/);
+    assert.match(html, /color:var\(--success\)">\+added line</);
+    assert.match(html, /color:var\(--error\)">-removed line</);
+    // The unchanged line keeps the body's own colour, not the marker's.
+    assert.match(html, /color:var\(--text\)">unchanged</);
+  } finally {
+    clearExpandedToolCalls();
+  }
+});
+
 test("one column names a file section by the file's own path, not by Before and After", () => {
   const files = parseUnifiedPatch(`--- a/one.ts
 +++ b/one.ts
