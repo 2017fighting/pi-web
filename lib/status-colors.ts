@@ -18,6 +18,10 @@
  * each view mixing the wash at its own weight. Its unchanged row's marker colour
  * is `var(--text-dim)`, a single token, but it is the same single token in all
  * three views and stays here with its wash.
+ *
+ * The file viewer's live indicator repeats the same way: each of its five
+ * headers names the same caption colour, dot fill and glow, so
+ * `liveDotChrome()` keeps that whole trio in one place.
  */
 
 /** A passed state's color: a tool's name, a status dot or label. */
@@ -72,6 +76,28 @@ export function diffRowChrome(kind: DiffRowKind): DiffRowChrome {
     case "context":
       return { fill: "transparent", prefixColor: "var(--text-dim)" };
   }
+}
+
+/** A live indicator's colours: its caption's, its dot's fill and its dot's glow. */
+export interface LiveDotChrome {
+  /** The colour of the caption beside the dot. */
+  color: string;
+  /** The dot's fill. */
+  background: string;
+  /** The glow a watching dot carries, and nothing while it does not watch. */
+  boxShadow: string;
+}
+
+/**
+ * The live indicator a file view's header draws: green while the view watches
+ * the file, and a border-coloured dot with a dim caption once it does not. The
+ * dot's size and shape, and the caption's text and layout, stay where each
+ * header draws them.
+ */
+export function liveDotChrome(watching: boolean): LiveDotChrome {
+  return watching
+    ? { color: STATUS_SUCCESS_COLOR, background: STATUS_SUCCESS_COLOR, boxShadow: `0 0 4px ${STATUS_SUCCESS_COLOR}` }
+    : { color: "var(--text-dim)", background: "var(--border)", boxShadow: "none" };
 }
 
 /** The card's outer edge: the strongest status line. */
