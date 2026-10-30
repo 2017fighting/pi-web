@@ -11,6 +11,13 @@
  * style — a text color, a `1px solid var(--error)` — is not that shape and is
  * spelled where the surface draws it, as is a mix of a token into a surface
  * (`var(--bg-panel)`, `var(--border)`).
+ *
+ * A diff row is the one surface whose whole status chrome is repeated: the
+ * chat's split and one-column patches and the file viewer's diff draw the same
+ * fill and marker colour, so `diffRowChrome()` names that pair once instead of
+ * each view mixing the wash at its own weight. Its unchanged row's marker colour
+ * is `var(--text-dim)`, a single token, but it is the same single token in all
+ * three views and stays here with its wash.
  */
 
 /** A passed state's color: a tool's name, a status dot or label. */
@@ -38,6 +45,32 @@ export function statusWash(color: StatusColor, percent: number): string {
 /** One status line of the given weight: `1px solid` plus a wash of the color. */
 export function statusBorder(color: StatusColor, percent: number): string {
   return `1px solid ${statusWash(color, percent)}`;
+}
+
+/** The rows a diff view draws one at a time: a line a side added, removed, or neither. */
+export type DiffRowKind = "added" | "removed" | "context";
+
+/** An added, removed or unchanged diff row's chrome. */
+export interface DiffRowChrome {
+  /** The wash behind the line. */
+  fill: string;
+  /** The colour of the line's `+` / `-` marker (or of the line, where a view colours it whole). */
+  prefixColor: string;
+}
+
+/**
+ * A diff row's chrome: the same fill and marker colour in the chat's two patch
+ * views and in the file viewer.
+ */
+export function diffRowChrome(kind: DiffRowKind): DiffRowChrome {
+  switch (kind) {
+    case "added":
+      return { fill: statusWash(STATUS_SUCCESS_COLOR, 12), prefixColor: STATUS_SUCCESS_COLOR };
+    case "removed":
+      return { fill: statusWash(STATUS_ERROR_COLOR, 13), prefixColor: STATUS_ERROR_COLOR };
+    case "context":
+      return { fill: "transparent", prefixColor: "var(--text-dim)" };
+  }
 }
 
 /** The card's outer edge: the strongest status line. */
