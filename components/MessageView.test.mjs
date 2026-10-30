@@ -1100,6 +1100,30 @@ test("expands a multi-select questionnaire with its tag, ticks, custom answer an
   assert.match(text, /keep it simple/);
 });
 
+test("tags a question the result answered with several ticks as multi-select", (t) => {
+  // A `multi` answer to a question whose call never set the flag still ticks more
+  // than one option, and two ticks have to read as "both".
+  const block = questionnaireCall("call-ask-user-question-multi-unflagged", [
+    {
+      question: "Where should sessions live?",
+      header: "Storage",
+      options: [{ label: "Disk" }, { label: "S3" }],
+    },
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, kind: "multi", selected: ["Disk", "S3"] }], cancelled: false },
+    'User has answered your questions: "Where should sessions live?"="Disk, S3".',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, result));
+
+  assert.match(text, /multi-select/);
+  assert.match(text, /✓Disk/);
+  assert.match(text, /✓S3/);
+});
+
 test("marks a question left blank on a partial submit as unanswered", (t) => {
   const block = questionnaireCall("call-ask-user-question-partial", [
     { question: "Which auth method?", header: "Auth", options: [{ label: "OAuth", description: "" }, { label: "API key", description: "" }] },

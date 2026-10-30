@@ -49,12 +49,16 @@ function AnswerLine({ label, text }: { label: string; text: string }) {
 function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
   const { t } = useI18n();
   const { question } = block;
+  // The call's own flag, or a result that ticked more than one option: a `multi`
+  // answer to a question whose call never set the flag still ticks several, and two
+  // ticks have to read as "both" rather than as a rendering mistake.
+  const multiSelect = question.multiSelect || block.selected.length > 1;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-      {(question.header || question.multiSelect || block.unanswered) && (
+      {(question.header || multiSelect || block.unanswered) && (
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           {question.header && <span style={QUESTION_CHIP_STYLE}>{question.header}</span>}
-          {question.multiSelect && <span style={TAG_STYLE}>{t("askUserQuestion.multiSelect")}</span>}
+          {multiSelect && <span style={TAG_STYLE}>{t("askUserQuestion.multiSelect")}</span>}
           {block.unanswered && (
             <span style={{ ...TAG_STYLE, border: `1px solid ${STATUS_WARNING_COLOR}`, color: STATUS_WARNING_COLOR }}>
               {t("askUserQuestion.unanswered")}
