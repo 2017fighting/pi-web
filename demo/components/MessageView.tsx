@@ -1153,7 +1153,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   const questionState = questionnaire === null ? null : askUserQuestionState(questionnaire, result, questionLive);
   // The card already says what came back, so the result's envelope underneath it
   // would print the same answer twice.
-  const hidesResult = questionnaire !== null && askUserQuestionHidesResult(result);
+  const hidesResult = questionnaire !== null && askUserQuestionHidesResult(questionnaire, result);
   // The questionnaire the expanded card draws: each question with its ticks, the
   // text typed and the note.
   const questionBlocks = questionnaire === null ? null : askUserQuestionBlocks(questionnaire, result);

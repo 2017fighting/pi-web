@@ -231,13 +231,36 @@ export function askUserQuestionFailed(result: { details?: unknown; isError?: boo
  * drops it: the envelope's `"question"="answer"` pairs are exactly what the
  * summary shows. An error's text is the whole message and a result with no
  * answers list says something the card does not, so both keep theirs.
+ *
+ * When an answer names an option label the question does not offer, the card
+ * cannot show it (it drops the label and marks the question unanswered). The
+ * envelope is kept in that case so the text the result carried is not lost
+ * entirely.
  */
-export function askUserQuestionHidesResult(result: { details?: unknown; isError?: boolean } | undefined): boolean {
+export function askUserQuestionHidesResult(
+  questions: readonly AskUserQuestionQuestion[],
+  result: { details?: unknown; isError?: boolean } | undefined,
+): boolean {
   if (!result || isErrorResult(result)) return false;
-  // The extension answers a host that cannot render the questionnaire with
-  // `answers: []` and an `error` ("UI not available", "this client cannot
-  // render the questionnaire"): that text is the message, not a duplicate.
-  return isRecord(result.details) && Array.isArray(result.details.answers);
+  const details = result.details;
+  if (!isRecord(details) || !Array.isArray(details.answers)) return false;
+
+  for (const answer of details.answers) {
+    if (!isRecord(answer)) continue;
+    const question = typeof answer.questionIndex === "number" ? questions[answer.questionIndex] : undefined;
+    if (question === undefined) return false;
+    if (answer.kind === "option" && typeof answer.answer === "string" && answer.answer) {
+      if (optionFor(question, answer.answer) === undefined) return false;
+    } else if (answer.kind === "multi" && Array.isArray(answer.selected)) {
+      for (const selected of answer.selected) {
+        if (typeof selected === "string" && selected.length > 0 && optionFor(question, selected) === undefined) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
 }
 
 /** The key each settled-or-not state reads by, apart from `answered`'s own label. */

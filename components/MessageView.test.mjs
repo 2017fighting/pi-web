@@ -1139,14 +1139,15 @@ test("marks a question whose answer entry names no choice unanswered, as its row
   assert.doesNotMatch(text, /✓/);
 });
 
-test("reads an answer naming a label the question does not offer as unanswered, in the row and the body", (t) => {
+test("reads an answer naming a label the question does not offer as unanswered, and keeps the envelope", (t) => {
   const block = questionnaireCall("call-ask-user-question-ghost-label", [
     { question: "Which auth method?", header: "Auth", options: [{ label: "OAuth", description: "" }, { label: "API key", description: "" }] },
   ]);
   // The question offered OAuth and API key; the result answers with another label.
-  // Neither reader may make it read as an exchange the user had: the row's answer
-  // slot says `unanswered` and the body marks the question, instead of printing a
-  // label no option carries beside a list nobody ticked.
+  // Neither card reader may make it read as an exchange the user had: the row's
+  // answer slot says `unanswered` and the body marks the question. Because the
+  // card cannot show the stray label, the result envelope is kept underneath it
+  // so the text the result carried is not lost entirely.
   const result = questionnaireResult(
     block,
     { cancelled: false, answers: [{ questionIndex: 0, kind: "option", answer: "Ghost" }] },
@@ -1157,7 +1158,7 @@ test("reads an answer naming a label the question does not offer as unanswered, 
   const text = textOf(renderQuestionnaire(block, result));
   assert.match(text, /Auth · 1 question · unanswered/);
   assert.equal((text.match(/unanswered/g) ?? []).length, 2, "the row and the block both say unanswered");
-  assert.doesNotMatch(text, /Ghost/, "neither the row nor the body names a label the question never offered");
+  assert.match(text, /User has answered your questions: "Which auth method\?"="Ghost"\./, "the envelope stays visible");
   assert.match(text, /○OAuth/);
   assert.match(text, /○API key/);
   assert.doesNotMatch(text, /✓/);

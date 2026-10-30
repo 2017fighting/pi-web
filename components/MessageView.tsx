@@ -1245,7 +1245,7 @@ function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOp
   // The card already says what came back, so the result's envelope underneath it
   // would print the same answer twice. Guarded by the card's own view: another
   // tool's result may carry an `answers` list of its own.
-  const hidesResult = questionnaire !== null && askUserQuestionHidesResult(result);
+  const hidesResult = questionnaire !== null && askUserQuestionHidesResult(questionnaire, result);
   // The questionnaire the expanded card draws: each question with its ticks, the
   // text typed and the note. Built only when the card has the questionnaire view.
   const questionBlocks = questionnaire === null ? null : askUserQuestionBlocks(questionnaire, result);
