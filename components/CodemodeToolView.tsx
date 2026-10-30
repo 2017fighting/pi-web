@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useI18n } from "@/hooks/useI18n";
+import { statusSeparatorBorder } from "@/lib/status-colors";
 import {
   codemodeTotalCost,
   formatCodemodeCost,
@@ -17,10 +18,12 @@ import {
 /** Calls shown before the rest are folded behind a button; the newest stay visible. */
 export const CODEMODE_VISIBLE_CALLS = 20;
 
+// `ok` / `error` / `running` read the theme's status tokens; `cancelled` is a
+// plain dim neutral — not a card's success/error status.
 const STATUS_STYLE: Record<CodemodeCallStatus, { icon: string; color: string }> = {
-  running: { icon: "…", color: "#d97706" },
-  ok: { icon: "✓", color: "#16a34a" },
-  error: { icon: "✗", color: "#f87171" },
+  running: { icon: "…", color: "var(--warning)" },
+  ok: { icon: "✓", color: "var(--success)" },
+  error: { icon: "✗", color: "var(--error)" },
   cancelled: { icon: "⊘", color: "var(--text-dim)" },
 };
 
@@ -53,7 +56,7 @@ function CallRow({ call }: { call: CodemodeCallView }) {
         )}
       </div>
       {call.error && (
-        <div style={{ color: "#f87171", paddingLeft: 18, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{call.error}</div>
+        <div style={{ color: "var(--error)", paddingLeft: 18, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{call.error}</div>
       )}
     </li>
   );
@@ -75,7 +78,7 @@ export function CodemodeCallList({ calls, omitted, isError }: {
   return (
     <div
       style={{
-        borderTop: isError ? "1px solid rgba(248,113,113,0.25)" : "1px solid rgba(34,197,94,0.2)",
+        borderTop: statusSeparatorBorder(isError),
         background: "var(--bg-subtle)",
         padding: "6px 10px",
         fontFamily: "var(--font-mono)",

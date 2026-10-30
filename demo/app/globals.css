@@ -35,10 +35,17 @@
   --accent: #245bce;
   --accent-hover: #1d4ed8;
   --accent-contrast: #ffffff;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warning: #d97706;
   --user-bg: #eff6ff;
   --assistant-bg: #ffffff;
   --tool-bg: #f9fafb;
   --bg-subtle: rgba(0,0,0,0.03);
+  /* The thinking glyph's amber is not a status colour; its own names draw from
+     the palette's warning token, so the palette gains no new colour. */
+  --thinking-stroke: color-mix(in srgb, var(--warning) 80%, black);
+  --thinking-accent: var(--warning);
   --chat-content-max-width: 820px;
   --chat-content-font-size: 14px;
 }
@@ -57,6 +64,9 @@ html.dark,
   --accent: #a4c2f4;
   --accent-hover: #c3d8fa;
   --accent-contrast: #182234;
+  --success: #4ade80;
+  --error: #f87171;
+  --warning: #fbbf24;
   --user-bg: #292929;
   --assistant-bg: #1a1a1a;
   --tool-bg: #222222;
@@ -76,6 +86,9 @@ html.dark,
   --accent: #1e6559;
   --accent-hover: #174f46;
   --accent-contrast: #ffffff;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warning: #d97706;
   --user-bg: #e0efeb;
   --assistant-bg: #f4f8f7;
   --tool-bg: #ecf3f0;
@@ -95,6 +108,9 @@ html.dark,
   --accent: #914360;
   --accent-hover: #76324d;
   --accent-contrast: #ffffff;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warning: #d97706;
   --user-bg: #f3e4eb;
   --assistant-bg: #fcf7f8;
   --tool-bg: #f7eef2;
@@ -115,6 +131,9 @@ html[data-theme="pine"],
   --accent: #acccb7;
   --accent-hover: #d0e2d3;
   --accent-contrast: #182b20;
+  --success: #4ade80;
+  --error: #f87171;
+  --warning: #fbbf24;
   --user-bg: #25382f;
   --assistant-bg: #19201f;
   --tool-bg: #222d29;
@@ -286,13 +305,9 @@ body {
 .web-login-error {
   min-height: 17px;
   margin: 7px 4px 0;
-  color: #dc2626;
+  color: var(--error);
   font-size: 11px;
   line-height: 17px;
-}
-
-html.dark .web-login-error {
-  color: #f87171;
 }
 
 .web-login-form button {
@@ -329,6 +344,11 @@ html.dark .web-login-error {
 }
 
 .terminal-panel {
+  /* The demo's terminal keeps the app's dark surface in every theme; its status
+     dot reads the terminal's own tokens, not the app theme's. */
+  --terminal-success: #4ade80;
+  --terminal-error: #f87171;
+  --terminal-warning: #facc15;
   display: grid;
   grid-template-rows: 38px auto minmax(0, 1fr);
   width: 100%;
@@ -369,12 +389,12 @@ html.dark .web-login-error {
   height: 7px;
   flex: 0 0 7px;
   border-radius: 50%;
-  background: #facc15;
+  background: var(--terminal-warning);
 }
 
-.terminal-status-dot.is-ready { background: #4ade80; }
+.terminal-status-dot.is-ready { background: var(--terminal-success); }
 .terminal-status-dot.is-exited,
-.terminal-status-dot.is-error { background: #f87171; }
+.terminal-status-dot.is-error { background: var(--terminal-error); }
 
 .terminal-panel-header button {
   display: inline-flex;
@@ -918,6 +938,30 @@ pre, code {
 .markdown-custom-message .markdown-table-wrap,
 .markdown-custom-message .markdown-code-block {
   margin: 4px 0;
+}
+
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) {
+  line-height: 1.4;
+}
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) p { margin: 0 0 4px; }
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) p:last-child { margin-bottom: 0; }
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) ul,
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) ol {
+  margin: 2px 0 4px;
+}
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) .markdown-table-wrap,
+:is(.markdown-questionnaire-question, .markdown-questionnaire-preview) .markdown-code-block {
+  margin: 4px 0;
+}
+
+/* The chosen option's preview: an indented block under that option, so it reads as
+   the artifact that choice offered rather than a stray section. */
+.markdown-questionnaire-preview {
+  margin: 4px 0 2px 12px;
+  padding: 6px 8px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 0 4px 4px 0;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 
 .markdown-compaction-message {

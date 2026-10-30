@@ -51,6 +51,9 @@ export function TerminalPanel({ tab, active, onRestart, onClosed, onCloseError }
       scrollback: 8000,
       screenReaderMode: true,
       disableStdin: true,
+      // xterm wants concrete colors, not theme tokens, and the terminal's own
+      // light/dark choice is separate from the app theme (the app keeps the same
+      // palette in `lib/terminal-theme.ts`). So this ANSI palette stays literal.
       theme: {
         background: "#111318", foreground: "#d7dce5", cursor: "#60a5fa",
         selectionBackground: "#365b8a",

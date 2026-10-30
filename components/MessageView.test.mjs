@@ -17,6 +17,7 @@ const {
   ThinkingBlock,
   formatToolDuration,
   getModelDisplayName,
+  toolCardViewOf,
   getTokenEstimateText,
   getToolCallInputText,
   replaceUserMessageText,
@@ -349,7 +350,7 @@ test("renders subagents as standard tool calls with only an extra side-panel but
     onOpenSubagent() {},
   });
 
-  assert.match(html, /border:1px solid rgba\(34,197,94,0\.25\)/);
+  assert.match(html, /border:1px solid color-mix\(in srgb, var\(--success\) 25%, transparent\)/);
   assert.match(html, />Agent</);
   assert.match(html, />Explore</);
   assert.match(html, /aria-label="View sub-agent work in side panel"/);
@@ -406,6 +407,9 @@ test("renders a provider error when the assistant message has no content", () =>
   assert.match(html, /role="alert"/);
   assert.match(html, /Error: OpenAI API error \(403\)/);
   assert.match(html, /&lt;html&gt;request forbidden&lt;\/html&gt;/);
+  // The banner's chrome is the error token, washed 30% for the line and 7% for the fill.
+  assert.match(html, /border:1px solid color-mix\(in srgb, var\(--error\) 30%, transparent\)/);
+  assert.match(html, /background:color-mix\(in srgb, var\(--error\) 7%, transparent\)/);
 });
 
 test("renders a truncation notice for stopReason length", () => {
@@ -420,6 +424,9 @@ test("renders a truncation notice for stopReason length", () => {
   assert.match(html, /role="alert"/);
   assert.match(html, /output limit was reached before an answer/i);
   assert.doesNotMatch(html, /follow-up/i);
+  // A truncation is not a failure: the notice draws the same wash of --warning.
+  assert.match(html, /border:1px solid color-mix\(in srgb, var\(--warning\) 30%, transparent\)/);
+  assert.match(html, /background:color-mix\(in srgb, var\(--warning\) 7%, transparent\)/);
 });
 
 test("keeps the follow-up hint when a truncated response already has text", () => {
@@ -596,9 +603,9 @@ test("marks apply_patch returned failures as errors even when isError is unset",
     content: [block],
   }, { toolResults: new Map([[block.toolCallId, failed]]) });
 
-  assert.match(html, /border:1px solid rgba\(248,113,113,0\.45\)/);
+  assert.match(html, /border:1px solid color-mix\(in srgb, var\(--error\) 45%, transparent\)/);
   assert.match(html, />apply_patch</);
-  assert.doesNotMatch(html, /border:1px solid rgba\(34,197,94,0\.25\)/);
+  assert.doesNotMatch(html, /border:1px solid color-mix\(in srgb, var\(--success\) 25%, transparent\)/);
 });
 
 test("collapses a displayed custom message from its header alone", () => {
@@ -702,6 +709,23 @@ function renderCodemode(block, result) {
     model: "claude-test",
     content: [block],
   }, { toolResults: new Map(result ? [[block.toolCallId, result]] : []) });
+}
+
+function renderQuestionnaire(block, result) {
+  return renderMessage({
+    role: "assistant",
+    provider: "anthropic",
+    model: "claude-test",
+    content: [block],
+  }, { toolResults: new Map(result ? [[block.toolCallId, result]] : []) });
+}
+
+function questionnaireCall(toolCallId, questions) {
+  return { type: "toolCall", toolCallId, toolName: "ask_user_question", input: { questions } };
+}
+
+function questionnaireResult(block, details, text) {
+  return { role: "toolResult", toolCallId: block.toolCallId, content: [{ type: "text", text }], details };
 }
 
 const CODEMODE_SCRIPT = "// @options: {\"timeoutMs\": 5000}\nconst files = await tools.ls({ path: \".\" });\nreturn files.length;";
@@ -812,6 +836,397 @@ test("a codemode call with no script or streaming input falls back to a plain bo
   assert.match(otherHtml, /<table/);
   assert.match(otherHtml, />x<\/td>/);
   assert.doesNotMatch(textOf(otherHtml), /"script": "x"/);
+});
+
+test("picks a tool card's own view through one predicate, beside the generic card", () => {
+  const generic = { writtenFileText: null, patchFiles: null, codemodeCode: null, questionnaire: null };
+  assert.equal(toolCardViewOf(generic), null);
+  assert.equal(toolCardViewOf({ ...generic, writtenFileText: "one\ntwo" }), "write");
+  assert.equal(toolCardViewOf({ ...generic, patchFiles: [{ oldPath: "a.ts", newPath: "a.ts", rows: [] }] }), "patch");
+  assert.equal(toolCardViewOf({ ...generic, codemodeCode: "return 1" }), "codemode");
+  assert.equal(toolCardViewOf({ ...generic, questionnaire: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }] }] }), "questionnaire");
+});
+
+test("reads an ask_user_question call as the exchange it was, not [object Object]", () => {
+  const block = {
+    type: "toolCall",
+    toolCallId: "call-ask-user-question-1",
+    toolName: "ask_user_question",
+    input: {
+      questions: [
+        {
+          question: "Which auth method should the API use?",
+          header: "Auth method",
+          options: [
+            { label: "OAuth", description: "Delegate to the provider." },
+            { label: "API key", description: "Keep a shared secret." },
+          ],
+        },
+        {
+          question: "Where should sessions live?",
+          header: "Storage",
+          options: [{ label: "Disk" }, { label: "S3" }],
+        },
+      ],
+    },
+  };
+  const result = {
+    role: "toolResult",
+    toolCallId: block.toolCallId,
+    content: [{ type: "text", text: "User has answered your questions: \"Which auth method should the API use?\"=\"OAuth\". You can now continue with the user's answers in mind." }],
+    details: {
+      answers: [{ questionIndex: 0, question: "Which auth method should the API use?", kind: "option", answer: "OAuth" }],
+      cancelled: false,
+    },
+    durationMs: 2_400,
+  };
+  clearExpandedToolCalls();
+  try {
+    const html = renderMessage(
+      { role: "assistant", provider: "anthropic", model: "claude-test", content: [block], timestamp: 1_000_000 },
+      { toolResults: new Map([[block.toolCallId, result]]) },
+    );
+    const text = textOf(html);
+    assert.match(text, /ask_user_question/);
+    // The first question's header, how many questions the call carried, and what came back.
+    assert.match(text, /Auth method · 2 questions · OAuth/);
+    // The run time keeps the slot the card already uses.
+    assert.match(html, />2\.4s</);
+    assert.doesNotMatch(text, /\[object Object\]/);
+    assert.doesNotMatch(text, /"questions"/);
+  } finally {
+    clearExpandedToolCalls();
+  }
+});
+
+test("drops a questionnaire's envelope but keeps an error result's text", () => {
+  const block = {
+    type: "toolCall",
+    toolCallId: "call-ask-user-question-2",
+    toolName: "ask_user_question",
+    input: { questions: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }, { label: "B" }] }] },
+  };
+  const answered = {
+    role: "toolResult",
+    toolCallId: block.toolCallId,
+    content: [{ type: "text", text: 'User has answered your questions: "Which one?"="A". You can now continue with the user\'s answers in mind.' }],
+    details: { answers: [{ questionIndex: 0, question: "Which one?", kind: "option", answer: "A" }], cancelled: false },
+  };
+  const message = { role: "assistant", provider: "anthropic", model: "claude-test", content: [block] };
+  setToolCallExpanded(block.toolCallId, true);
+  try {
+    // The card says the answer itself; the envelope underneath is the same answer twice.
+    const answeredText = textOf(renderMessage(message, { toolResults: new Map([[block.toolCallId, answered]]) }));
+    assert.match(answeredText, /Pick · 1 question · A/);
+    assert.doesNotMatch(answeredText, /User has answered your questions/);
+
+    // An error's text is the whole message and stays visible, empty answers list and all.
+    const error = {
+      ...answered,
+      content: [{ type: "text", text: "Error: UI not available (running in non-interactive mode)" }],
+      details: { answers: [], cancelled: true, error: "no_ui" },
+    };
+    const errorText = textOf(renderMessage(message, { toolResults: new Map([[block.toolCallId, error]]) }));
+    assert.match(errorText, /UI not available/);
+    // An error is not a decline, so the row and the expanded body agree: the
+    // question was shown and left unanswered.
+    assert.match(errorText, /Pick · 1 question · unanswered/);
+    assert.match(errorText, /PickunansweredWhich one\?/);
+
+    // A thrown tool error carries no `details` at all. It is not a dismissal
+    // either, so the row says `unanswered` and the expanded body must mark the
+    // question too, not leave it looking answered.
+    const thrown = { ...answered, isError: true, content: [{ type: "text", text: "Error: tool threw" }], details: undefined };
+    const thrownText = textOf(renderMessage(message, { toolResults: new Map([[block.toolCallId, thrown]]) }));
+    assert.match(thrownText, /Error: tool threw/);
+    assert.match(thrownText, /Pick · 1 question · unanswered/);
+    assert.match(thrownText, /PickunansweredWhich one\?/);
+  } finally {
+    clearExpandedToolCalls();
+  }
+});
+
+test("reads a questionnaire with no result as waiting while its run is live and unfinished once it has ended", () => {
+  const block = {
+    type: "toolCall",
+    toolCallId: "call-ask-user-question-3",
+    toolName: "ask_user_question",
+    input: { questions: [{ question: "Which one?", header: "Pick", options: [{ label: "A" }] }] },
+  };
+  const message = { role: "assistant", provider: "anthropic", model: "claude-test", content: [block] };
+  // Still streaming, or finished with the run that made the call still going: the card is waiting on the user.
+  assert.match(textOf(renderMessage(message, { isStreaming: true })), /Pick · 1 question · waiting for an answer/);
+  assert.match(textOf(renderMessage(message, { isRunActive: true })), /Pick · 1 question · waiting for an answer/);
+  // A finished message on an ended run: pi never wrote a result.
+  assert.match(textOf(renderMessage(message, { isRunActive: false })), /Pick · 1 question · unfinished/);
+  // The run is what counts: a message that outlived it never keeps reading waiting.
+  assert.match(textOf(renderMessage(message, { isStreaming: true, isRunActive: false })), /Pick · 1 question · unfinished/);
+});
+
+test("expands a questionnaire into its questions, options and the ticked answer", (t) => {
+  const block = questionnaireCall("call-ask-user-question-expanded", [
+    {
+      question: "**Which** auth method should the API use?",
+      header: "Auth method",
+      options: [
+        { label: "OAuth", description: "Delegate to the provider." },
+        { label: "API key", description: "Keep a shared secret." },
+      ],
+    },
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, question: "**Which** auth method should the API use?", kind: "option", answer: "OAuth" }], cancelled: false },
+    'User has answered your questions: "Which auth method should the API use?"="OAuth". You can now continue with the user\'s answers in mind.',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const html = renderQuestionnaire(block, result);
+  const text = textOf(html);
+
+  // Every question: its header chip, its Markdown-rendered text, and its options
+  // with labels and descriptions.
+  assert.match(html, /<strong>Which<\/strong>/);
+  assert.match(text, /Auth method/);
+  assert.match(text, /OAuth/);
+  assert.match(text, /Delegate to the provider\./);
+  assert.match(text, /API key/);
+  assert.match(text, /Keep a shared secret\./);
+  // The chosen option reads ticked and the other reads as an empty mark, as text.
+  assert.match(text, /✓OAuth/);
+  assert.match(text, /○API key/);
+  assert.doesNotMatch(text, /✓API key/);
+  assert.doesNotMatch(text, /○OAuth/);
+  // The envelope the card already carries is dropped.
+  assert.doesNotMatch(text, /User has answered your questions/);
+});
+
+test("shows the chosen option's preview as Markdown under it, and keeps the others hidden", (t) => {
+  const block = questionnaireCall("call-ask-user-question-preview", [
+    {
+      question: "Which auth method should the API use?",
+      header: "Auth method",
+      options: [
+        { label: "OAuth", description: "Delegate to the provider.", preview: "**OAuth flow**\n\nRedirect, then callback." },
+        { label: "API key", description: "Keep a shared secret.", preview: "**API-key config**\n\nHeader only." },
+      ],
+    },
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, question: "Which auth method should the API use?", kind: "option", answer: "OAuth" }], cancelled: false },
+    'User has answered your questions: "Which auth method should the API use?"="OAuth".',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const html = renderQuestionnaire(block, result);
+  const text = textOf(html);
+
+  // The chosen option's preview renders as Markdown: its own text, in bold.
+  assert.match(html, /<strong>OAuth flow<\/strong>/);
+  assert.match(text, /Redirect, then callback\./);
+  // The option that was not chosen keeps its preview hidden.
+  assert.doesNotMatch(text, /API-key config/);
+});
+
+test("shows no preview for a multi-select or a typed answer", (t) => {
+  const multi = questionnaireCall("call-ask-user-question-preview-multi", [
+    {
+      question: "Where should sessions live?",
+      header: "Storage",
+      multiSelect: true,
+      options: [
+        { label: "Disk", description: "Local disk.", preview: "**Disk layout**\n\n/var/sessions" },
+        { label: "S3", description: "Object storage.", preview: "**S3 layout**\n\nbucket: s3://sessions" },
+      ],
+    },
+  ]);
+  setToolCallExpanded(multi.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const multiHtml = renderQuestionnaire(multi, questionnaireResult(
+    multi,
+    { answers: [{ questionIndex: 0, question: "Where should sessions live?", kind: "multi", answer: null, selected: ["Disk"] }], cancelled: false },
+    'User has answered your questions: "Where should sessions live?"="Disk".',
+  ));
+  assert.doesNotMatch(textOf(multiHtml), /Disk layout|S3 layout/);
+
+  const custom = questionnaireCall("call-ask-user-question-preview-custom", [
+    {
+      question: "Which auth method should the API use?",
+      header: "Auth method",
+      options: [
+        { label: "OAuth", description: "Delegate to the provider.", preview: "**OAuth flow**\n\nRedirect, then callback." },
+        { label: "API key", description: "Keep a shared secret." },
+      ],
+    },
+  ]);
+  setToolCallExpanded(custom.toolCallId, true);
+  const customHtml = renderQuestionnaire(custom, questionnaireResult(
+    custom,
+    { answers: [{ questionIndex: 0, question: "Which auth method should the API use?", kind: "custom", answer: "Something else" }], cancelled: false },
+    "User has answered your questions: \"Which auth method should the API use?\"=\"Something else\".",
+  ));
+  assert.doesNotMatch(textOf(customHtml), /OAuth flow/);
+});
+
+test("expands a multi-select questionnaire with its tag, ticks, custom answer and note", (t) => {
+  const block = questionnaireCall("call-ask-user-question-multi", [
+    {
+      question: "Where should sessions live?",
+      header: "Storage",
+      multiSelect: true,
+      options: [
+        { label: "Disk", description: "Local disk." },
+        { label: "S3", description: "Object storage." },
+      ],
+    },
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, question: "Where should sessions live?", kind: "multi", answer: "and dots", selected: ["Disk"], notes: "keep it simple" }], cancelled: false },
+    'User has answered your questions: "Where should sessions live?"="Disk".',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, result));
+
+  assert.match(text, /multi-select/);
+  assert.match(text, /✓Disk/);
+  assert.match(text, /○S3/);
+  // A typed answer and a note each read on their own, labelled line.
+  assert.match(text, /Custom answer/);
+  assert.match(text, /and dots/);
+  assert.match(text, /Note/);
+  assert.match(text, /keep it simple/);
+});
+
+test("tags a question the result answered with several ticks as multi-select", (t) => {
+  // A `multi` answer to a question whose call never set the flag still ticks more
+  // than one option, and two ticks have to read as "both".
+  const block = questionnaireCall("call-ask-user-question-multi-unflagged", [
+    {
+      question: "Where should sessions live?",
+      header: "Storage",
+      options: [{ label: "Disk" }, { label: "S3" }],
+    },
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, kind: "multi", selected: ["Disk", "S3"] }], cancelled: false },
+    'User has answered your questions: "Where should sessions live?"="Disk, S3".',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, result));
+
+  assert.match(text, /multi-select/);
+  assert.match(text, /✓Disk/);
+  assert.match(text, /✓S3/);
+});
+
+test("marks a question left blank on a partial submit as unanswered", (t) => {
+  const block = questionnaireCall("call-ask-user-question-partial", [
+    { question: "Which auth method?", header: "Auth", options: [{ label: "OAuth", description: "" }, { label: "API key", description: "" }] },
+    { question: "Where should sessions live?", header: "Storage", options: [{ label: "Disk", description: "" }, { label: "S3", description: "" }] },
+  ]);
+  const result = questionnaireResult(
+    block,
+    { answers: [{ questionIndex: 0, question: "Which auth method?", kind: "option", answer: "OAuth" }], cancelled: false, unanswered: [1] },
+    'User has answered your questions: "Which auth method?"="OAuth".',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, result));
+  // The blank question's own block is marked; the answered one is not.
+  assert.match(text, /Storage[\s\S]*?unanswered/);
+});
+
+test("marks a question whose answer entry names no choice unanswered, as its row reads", (t) => {
+  const block = questionnaireCall("call-ask-user-question-blank-entry", [
+    { question: "Which auth method?", header: "Auth", options: [{ label: "OAuth", description: "" }, { label: "API key", description: "" }] },
+  ]);
+  // An entry exists for the question but names nothing: no label, no typed text.
+  const result = questionnaireResult(
+    block,
+    { cancelled: false, answers: [{ questionIndex: 0, kind: "option", answer: "" }] },
+    'User has answered your questions: "Which auth method?"="".',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, result));
+  // The collapsed row reads `unanswered`, and the expanded body marks the question
+  // with it — the word twice on screen, once in the row and once as the block's
+  // tag — rather than drawing a list nobody ticked as though it were an answer.
+  assert.match(text, /Auth · 1 question · unanswered/);
+  assert.equal((text.match(/unanswered/g) ?? []).length, 2, "the row and the block both say unanswered");
+  assert.match(text, /○OAuth/);
+  assert.doesNotMatch(text, /✓/);
+});
+
+test("reads an answer naming a label the question does not offer as unanswered, and keeps the envelope", (t) => {
+  const block = questionnaireCall("call-ask-user-question-ghost-label", [
+    { question: "Which auth method?", header: "Auth", options: [{ label: "OAuth", description: "" }, { label: "API key", description: "" }] },
+  ]);
+  // The question offered OAuth and API key; the result answers with another label.
+  // Neither card reader may make it read as an exchange the user had: the row's
+  // answer slot says `unanswered` and the body marks the question. Because the
+  // card cannot show the stray label, the result envelope is kept underneath it
+  // so the text the result carried is not lost entirely.
+  const result = questionnaireResult(
+    block,
+    { cancelled: false, answers: [{ questionIndex: 0, kind: "option", answer: "Ghost" }] },
+    'User has answered your questions: "Which auth method?"="Ghost".',
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, result));
+  assert.match(text, /Auth · 1 question · unanswered/);
+  assert.equal((text.match(/unanswered/g) ?? []).length, 2, "the row and the block both say unanswered");
+  assert.match(text, /User has answered your questions: "Which auth method\?"="Ghost"\./, "the envelope stays visible");
+  assert.match(text, /○OAuth/);
+  assert.match(text, /○API key/);
+  assert.doesNotMatch(text, /✓/);
+});
+
+test("keeps the generic JSON view for an ask_user_question call whose questions are malformed", (t) => {
+  const block = questionnaireCall("call-ask-user-question-malformed", [{ question: "Which one?" }]);
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, undefined));
+  // Not the card: the raw arguments show, as the generic tool view draws them.
+  assert.match(text, /"questions"/);
+  assert.doesNotMatch(text, /multi-select/);
+});
+
+test("reads an empty questions list as the no-questions failure, keeping its error text", (t) => {
+  const block = questionnaireCall("call-ask-user-question-none", []);
+  const result = questionnaireResult(
+    block,
+    { answers: [], cancelled: true, error: "no_questions" },
+    "Error: no_questions",
+  );
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, result));
+  // The card reads the exchange, not `[object Object]` or the raw arguments.
+  assert.match(text, /ask_user_question/);
+  assert.match(text, /0 questions · unanswered/);
+  assert.doesNotMatch(text, /\[object Object\]/);
+  // The error is not a dismissal, so the text is the message and stays visible.
+  assert.match(text, /no_questions/);
+});
+
+test("reads the answer slot unanswered when an error result carries an answer", (t) => {
+  const block = questionnaireCall("call-ask-user-question-error", [
+    { question: "Which one?", header: "Pick", options: [{ label: "A" }, { label: "B" }] },
+  ]);
+  // A thrown tool error is not a dismissal, so it must not show a choice the user never made.
+  const thrown = { ...questionnaireResult(block, undefined, "Error: tool threw"), isError: true, details: undefined };
+  setToolCallExpanded(block.toolCallId, true);
+  t.after(() => clearExpandedToolCalls());
+  const text = textOf(renderQuestionnaire(block, thrown));
+  assert.match(text, /Pick · 1 question · unanswered/);
+  assert.match(text, /Error: tool threw/);
 });
 
 test("labels an MCP call server/tool and indents a JSON result", (t) => {
@@ -955,6 +1370,45 @@ test("the same patch in one column: no line twice, the removed line above what r
   const split = renderPatchFiles(parseUnifiedPatch(EDIT_PATCH), "split");
   assert.ok(split.includes(TWO_COLUMN_GRID));
   assert.equal(countIn(split, "const keep = true;"), 2);
+});
+
+test("the split view and a result's plain patch draw a changed row's fill and marker from one chrome", () => {
+  // Both columns of an edited pair: the wash behind the line and the colour of
+  // its - / + marker, the same pair `diffRowChrome()` gives the file viewer.
+  const split = renderPatchFiles(parseUnifiedPatch(EDIT_PATCH), "split");
+  assert.match(split, /min-width:0;background:color-mix\(in srgb, var\(--error\) 13%, transparent\)/);
+  assert.match(split, /min-width:0;background:color-mix\(in srgb, var\(--success\) 12%, transparent\)/);
+  assert.match(split, /color:var\(--error\);user-select:none;font-weight:700;flex-shrink:0">-</);
+  assert.match(split, /color:var\(--success\);user-select:none;font-weight:700;flex-shrink:0">\+</);
+  // An unchanged line keeps the dim marker and no fill.
+  assert.match(split, /min-width:0;background:transparent;/);
+  assert.match(split, /color:var\(--text-dim\);user-select:none;font-weight:400;flex-shrink:0"> </);
+
+  // A patch that is not a unified diff renders as plain lines, each coloured
+  // whole; the added and removed ones take the same chrome.
+  const block = { type: "toolCall", toolCallId: "call-plain-patch", toolName: "bash", input: { command: "git diff" } };
+  const result = {
+    role: "toolResult",
+    toolCallId: block.toolCallId,
+    toolName: "bash",
+    content: [{ type: "text", text: "plain diff" }],
+    details: { diff: "unchanged\n+added line\n-removed line\n" },
+  };
+  setToolCallExpanded(block.toolCallId, true);
+  try {
+    const html = renderMessage(
+      { role: "assistant", provider: "anthropic", model: "claude-test", content: [block] },
+      { toolResults: new Map([[block.toolCallId, result]]) },
+    );
+    assert.match(html, /background:color-mix\(in srgb, var\(--success\) 12%, transparent\);border-left:3px solid var\(--success\)/);
+    assert.match(html, /background:color-mix\(in srgb, var\(--error\) 13%, transparent\);border-left:3px solid var\(--error\)/);
+    assert.match(html, /color:var\(--success\)">\+added line</);
+    assert.match(html, /color:var\(--error\)">-removed line</);
+    // The unchanged line keeps the body's own colour, not the marker's.
+    assert.match(html, /color:var\(--text\)">unchanged</);
+  } finally {
+    clearExpandedToolCalls();
+  }
 });
 
 test("one column names a file section by the file's own path, not by Before and After", () => {

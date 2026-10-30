@@ -14,6 +14,9 @@ import { diffGapLabel, parseUnifiedPatch, unifiedDiffLines, type SplitDiffCell, 
 import { applyPatchPreviewToFiles, applyPatchResultHasFailures, extractApplyPatchPaths, getApplyPatchInputText, parseApplyPatchInput } from "@/lib/apply-patch";
 import { isApplyPatchToolName, isEditToolName, isWriteToolName } from "@/lib/tool-names";
 import { toolFieldsOfInput, type ToolField } from "@/lib/tool-fields";
+import { STATUS_ERROR_COLOR, STATUS_WARNING_COLOR, diffRowChrome, statusBorder, statusCardBackground, statusCardBorder, statusResultBorder, statusSeparatorBorder, statusTextColor, statusWash } from "@/lib/status-colors";
+import { ASK_USER_QUESTION_SUMMARY_SEPARATOR, askUserQuestionBlocks, askUserQuestionFailed, askUserQuestionHidesResult, askUserQuestionState, askUserQuestionSummaryParts, parseAskUserQuestion, type AskUserQuestionQuestion } from "@/lib/ask-user-question-view";
+import { AskUserQuestionView, QUESTION_CHIP_STYLE } from "./AskUserQuestionView";
 import { isToolCallExpanded, setToolCallExpanded } from "@/lib/tool-call-expansion";
 import { isThinkingExpandedByDefault, THINKING_EXPANDED_EVENT } from "@/lib/thinking-expansion-preference";
 import { TurnWrittenFiles } from "./TurnWrittenFiles";
@@ -186,6 +189,12 @@ function loadThinkingContent(sessionId: string, entryId: string, blockIndex: num
 interface Props {
   message: AgentMessage;
   isStreaming?: boolean;
+  /**
+   * Whether the run that produced this message is still going. Its assistant
+   * message ends before its tools run, so a card that says a call is still
+   * waiting on the user needs the run, not just the stream.
+   */
+  isRunActive?: boolean;
   toolResults?: Map<string, ToolResultMessage>;
   modelNames?: Record<string, string>;
   cwd?: string;
@@ -277,12 +286,12 @@ function haveSameRelevantToolResults(
   return true;
 }
 
-export const MessageView = memo(function MessageView({ message, isStreaming, toolResults, modelNames, cwd, onOpenFile, onOpenSession, entryId, searchBlock, onFork, forking, onNavigate, onEditContent, showTimestamp, prevTimestamp, sessionId, writtenFiles, onCompact, isCompacting, compactError }: Props) {
+export const MessageView = memo(function MessageView({ message, isStreaming, isRunActive, toolResults, modelNames, cwd, onOpenFile, onOpenSession, entryId, searchBlock, onFork, forking, onNavigate, onEditContent, showTimestamp, prevTimestamp, sessionId, writtenFiles, onCompact, isCompacting, compactError }: Props) {
   if (message.role === "user") {
     return <UserMessageView message={message as UserMessage} cwd={cwd} onOpenFile={onOpenFile} entryId={entryId} onFork={onFork} forking={forking} onNavigate={onNavigate} onEditContent={onEditContent} />;
   }
   if (message.role === "assistant") {
-    return <AssistantMessageView message={message as AssistantMessage} isStreaming={isStreaming} toolResults={toolResults} modelNames={modelNames} cwd={cwd} onOpenFile={onOpenFile} onOpenSession={onOpenSession} showTimestamp={showTimestamp} prevTimestamp={prevTimestamp} sessionId={sessionId} entryId={entryId} searchBlock={searchBlock} writtenFiles={writtenFiles} onCompact={onCompact} isCompacting={isCompacting} compactError={compactError} />;
+    return <AssistantMessageView message={message as AssistantMessage} isStreaming={isStreaming} isRunActive={isRunActive} toolResults={toolResults} modelNames={modelNames} cwd={cwd} onOpenFile={onOpenFile} onOpenSession={onOpenSession} showTimestamp={showTimestamp} prevTimestamp={prevTimestamp} sessionId={sessionId} entryId={entryId} searchBlock={searchBlock} writtenFiles={writtenFiles} onCompact={onCompact} isCompacting={isCompacting} compactError={compactError} />;
   }
   if (message.role === "toolResult") {
     // Rendered inline under its toolCall — skip standalone rendering if paired
@@ -301,6 +310,7 @@ export const MessageView = memo(function MessageView({ message, isStreaming, too
 }, (prev, next) => {
   return prev.message === next.message
     && prev.isStreaming === next.isStreaming
+    && prev.isRunActive === next.isRunActive
     && haveSameRelevantToolResults(prev.message, prev.toolResults, next.toolResults)
     && prev.modelNames === next.modelNames
     && prev.cwd === next.cwd
@@ -606,6 +616,7 @@ function UserMessageView({ message, cwd, onOpenFile, entryId, onFork, forking, o
 function AssistantMessageView({
   message,
   isStreaming,
+  isRunActive,
   toolResults,
   modelNames,
   cwd,
@@ -623,6 +634,7 @@ function AssistantMessageView({
 }: {
   message: AssistantMessage;
   isStreaming?: boolean;
+  isRunActive?: boolean;
   toolResults?: Map<string, ToolResultMessage>;
   modelNames?: Record<string, string>;
   cwd?: string;
@@ -818,7 +830,7 @@ function AssistantMessageView({
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {blockItems.map(({ block, originalIndex }) => (
-          <BlockView key={`${entryId ?? "stream"}-${originalIndex}`} block={block} searchTarget={block === searchBlock} toolResults={toolResults} isStreaming={isStreaming} streamingDuration={streamingDurations.get(originalIndex) ?? (block.type === "thinking" ? thinkingDurationFromFile : undefined)} toolCallDurations={toolCallDurations} cwd={cwd} onOpenFile={onOpenFile} onOpenSession={onOpenSession} sessionId={sessionId} entryId={entryId} blockIndex={originalIndex} />
+          <BlockView key={`${entryId ?? "stream"}-${originalIndex}`} block={block} searchTarget={block === searchBlock} toolResults={toolResults} isStreaming={isStreaming} isRunActive={isRunActive} streamingDuration={streamingDurations.get(originalIndex) ?? (block.type === "thinking" ? thinkingDurationFromFile : undefined)} toolCallDurations={toolCallDurations} cwd={cwd} onOpenFile={onOpenFile} onOpenSession={onOpenSession} sessionId={sessionId} entryId={entryId} blockIndex={originalIndex} />
         ))}
       </div>
 
@@ -828,10 +840,10 @@ function AssistantMessageView({
           style={{
             marginTop: blocks.length > 0 ? 8 : 0,
             padding: "7px 10px",
-            border: "1px solid rgba(239,68,68,0.3)",
+            border: statusBorder(STATUS_ERROR_COLOR, 30),
             borderRadius: 6,
-            background: "rgba(239,68,68,0.07)",
-            color: "#ef4444",
+            background: statusWash(STATUS_ERROR_COLOR, 7),
+            color: STATUS_ERROR_COLOR,
             fontFamily: "var(--font-mono)",
             fontSize: 12,
             lineHeight: 1.5,
@@ -849,10 +861,10 @@ function AssistantMessageView({
           style={{
             marginTop: blocks.length > 0 || providerError ? 8 : 0,
             padding: "7px 10px",
-            border: "1px solid rgba(234,179,8,0.3)",
+            border: statusBorder(STATUS_WARNING_COLOR, 30),
             borderRadius: 6,
-            background: "rgba(234,179,8,0.07)",
-            color: "#ca8a04",
+            background: statusWash(STATUS_WARNING_COLOR, 7),
+            color: STATUS_WARNING_COLOR,
             fontFamily: "var(--font-mono)",
             fontSize: 12,
             lineHeight: 1.5,
@@ -882,7 +894,7 @@ function AssistantMessageView({
             </button>
           )}
           {unansweredTruncation && compactError && (
-            <div style={{ marginTop: 8, color: "#ef4444", whiteSpace: "pre-wrap" }}>{compactError}</div>
+            <div style={{ marginTop: 8, color: "var(--error)", whiteSpace: "pre-wrap" }}>{compactError}</div>
           )}
         </div>
       )}
@@ -940,7 +952,7 @@ function AssistantMessageView({
   );
 }
 
-function BlockView({ block, searchTarget, toolResults, isStreaming, streamingDuration, toolCallDurations, cwd, onOpenFile, onOpenSession, sessionId, entryId, blockIndex }: { block: AssistantContentBlock; searchTarget?: boolean; toolResults?: Map<string, ToolResultMessage>; isStreaming?: boolean; streamingDuration?: number; toolCallDurations?: Map<string, number>; cwd?: string; onOpenFile?: (filePath: string, page?: number) => void; onOpenSession?: (sessionId: string) => void; sessionId?: string; entryId?: string; blockIndex: number }) {
+function BlockView({ block, searchTarget, toolResults, isStreaming, isRunActive, streamingDuration, toolCallDurations, cwd, onOpenFile, onOpenSession, sessionId, entryId, blockIndex }: { block: AssistantContentBlock; searchTarget?: boolean; toolResults?: Map<string, ToolResultMessage>; isStreaming?: boolean; isRunActive?: boolean; streamingDuration?: number; toolCallDurations?: Map<string, number>; cwd?: string; onOpenFile?: (filePath: string, page?: number) => void; onOpenSession?: (sessionId: string) => void; sessionId?: string; entryId?: string; blockIndex: number }) {
   if (block.type === "text") {
     return <div data-message-text data-search-target={searchTarget || undefined}><TextBlock block={block as TextContent} isStreaming={isStreaming} cwd={cwd} onOpenFile={onOpenFile} /></div>;
   }
@@ -951,7 +963,7 @@ function BlockView({ block, searchTarget, toolResults, isStreaming, streamingDur
     const tc = block as ToolCallContent;
     const result = toolResults?.get(tc.toolCallId);
     const duration = toolCallDurations?.get(tc.toolCallId);
-    return <ToolCallBlock block={tc} result={result} duration={duration} onOpenSession={onOpenSession} />;
+    return <ToolCallBlock block={tc} result={result} duration={duration} isStreaming={isStreaming} isRunActive={isRunActive} onOpenSession={onOpenSession} />;
   }
   return null;
 }
@@ -1073,7 +1085,7 @@ export function ThinkingBlock({ block, duration, sessionId, entryId, blockIndex 
           style={{
             flex: 1,
             minWidth: 0,
-            color: error ? "#f87171" : "var(--text-muted)",
+            color: error ? "var(--error)" : "var(--text-muted)",
             whiteSpace: "pre-wrap",
             overflowWrap: "anywhere",
           }}
@@ -1094,7 +1106,29 @@ function isSubagentToolDetails(value: unknown): value is SubagentToolDetails {
   return details.kind === "pi-web-subagent" && typeof details.sessionId === "string";
 }
 
-function ToolCallBlock({ block, result, duration, onOpenSession }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; onOpenSession?: (sessionId: string) => void }) {
+/** A view of its own a tool card can show instead of its arguments. */
+export type ToolCardView = "write" | "patch" | "codemode" | "questionnaire";
+
+/**
+ * Which view of its own a tool call has, or null for the generic card (its
+ * arguments as rows, else as JSON). The one place the card decides, so a new
+ * view is one case here rather than one more clause in every condition that
+ * guards the generic body.
+ */
+export function toolCardViewOf(views: {
+  writtenFileText: string | null;
+  patchFiles: SplitDiffFile[] | null;
+  codemodeCode: string | null;
+  questionnaire: AskUserQuestionQuestion[] | null;
+}): ToolCardView | null {
+  if (views.writtenFileText !== null) return "write";
+  if (views.patchFiles !== null) return "patch";
+  if (views.codemodeCode !== null) return "codemode";
+  if (views.questionnaire !== null) return "questionnaire";
+  return null;
+}
+
+function ToolCallBlock({ block, result, duration, isStreaming, isRunActive, onOpenSession }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; isStreaming?: boolean; isRunActive?: boolean; onOpenSession?: (sessionId: string) => void }) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(() => isToolCallExpanded(block.toolCallId));
   const toggleExpanded = () => {
@@ -1108,13 +1142,38 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
   const isEditTool = isEditToolName(block.toolName);
   const resultDiff = result && !result.isError ? getResultDiff(result) : null;
   const patchFiles = getApplyPatchFiles(block, result);
+  // The questionnaire an `ask_user_question` call carried, or null for any other
+  // call — another name, another shape, or arguments still streaming.
+  const questionnaire = parseAskUserQuestion(block);
+  // Where that call stands: answered or declined from its result, else waiting
+  // while the run that made it is still going, and unfinished once that run has
+  // ended without a result. The run is the source when the caller knows it; the
+  // message's own stream is only the fallback.
+  const questionLive = isRunActive ?? isStreaming === true;
+  const questionState = questionnaire === null ? null : askUserQuestionState(questionnaire, result, questionLive);
+  // The card already says what came back, so the result's envelope underneath it
+  // would print the same answer twice.
+  const hidesResult = questionnaire !== null && askUserQuestionHidesResult(questionnaire, result);
+  // The questionnaire the expanded card draws: each question with its ticks, the
+  // text typed and the note.
+  const questionBlocks = questionnaire === null ? null : askUserQuestionBlocks(questionnaire, result);
+  // The one predicate: which view of its own this card has, or null for the
+  // generic one (flat rows, else the JSON). The demo has no codemode view.
+  const cardView = toolCardViewOf({ writtenFileText, patchFiles, codemodeCode: null, questionnaire });
+
   // Flat arguments as rows instead of a JSON blob, unless the card has a view of
-  // its own (a write's file text, an applied patch). See `lib/tool-fields.ts`.
-  const toolFields =
-    !isStreamingInput && writtenFileText === null && patchFiles === null ? toolFieldsOfInput(block.input) : null;
+  // its own. See `lib/tool-fields.ts`.
+  const toolFields = cardView === null && !isStreamingInput ? toolFieldsOfInput(block.input) : null;
   const patchLabel = isApplyPatchToolName(block.toolName)
     ? summarizeApplyPatchInput(block)
     : null;
+
+  // The questionnaire's summary keeps its first part apart, because the row draws
+  // it as the header chip the call carried rather than as flat text.
+  const questionSummary = questionnaire && questionState ? askUserQuestionSummaryParts(questionnaire, questionState, t) : null;
+  // The one line beside the tool's name: an applied patch's files, or a
+  // questionnaire's summary of the exchange.
+  const cardPreview = questionSummary !== null ? null : (patchLabel ?? getToolPreview(block));
 
   // Result display
   const resultText = result
@@ -1123,7 +1182,11 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
   const resultImages = getMessageImages(result?.content ?? []);
   const resultIsEmpty = resultText === null ? false : (resultText.trim() === "(no output)" || resultText.trim() === "");
   const isError = (result?.isError ?? false)
-    || (isApplyPatchToolName(block.toolName) && applyPatchResultHasFailures(result?.details));
+    || (isApplyPatchToolName(block.toolName) && applyPatchResultHasFailures(result?.details))
+    // The extension writes its own `error` for a questionnaire it never showed
+    // ("UI not available", "this client cannot render the questionnaire") without
+    // pi flagging the call, so the card is a failure even though `isError` is false.
+    || (questionnaire !== null && askUserQuestionFailed(result));
   const subagent = isSubagentToolDetails(result?.details) ? result.details : null;
 
   return (
@@ -1132,8 +1195,8 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
         borderRadius: 7,
         overflow: "hidden",
         fontSize: 12,
-        border: isError ? "1px solid rgba(248,113,113,0.45)" : "1px solid rgba(34,197,94,0.25)",
-        background: isError ? "rgba(248,113,113,0.05)" : "rgba(34,197,94,0.04)",
+        border: statusCardBorder(isError),
+        background: statusCardBackground(isError),
       }}
     >
       {/* ── Tool call header ── */}
@@ -1155,11 +1218,16 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
             textAlign: "left",
           }}
         >
-          <span style={{ color: isError ? "#f87171" : "#16a34a", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>
+          <span style={{ color: statusTextColor(isError), fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>
             {block.toolName}
           </span>
           <span style={{ color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-            {isStreamingInput ? t("chat.generatingToolInput") : (patchLabel ?? getToolPreview(block))}
+            {isStreamingInput ? t("chat.generatingToolInput") : questionSummary !== null ? (
+              <>
+                {questionSummary.header && <span style={QUESTION_CHIP_STYLE}>{questionSummary.header}</span>}
+                {questionSummary.header ? `${ASK_USER_QUESTION_SUMMARY_SEPARATOR}${questionSummary.detail}` : questionSummary.detail}
+              </>
+            ) : cardPreview}
           </span>
           {duration !== undefined && (
             <span style={{ fontSize: 11, color: "var(--text-dim)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{duration}s</span>
@@ -1182,13 +1250,13 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
       </div>
 
       {/* ── Expanded: input args (only when no richer view exists) ── */}
-      {expanded && (isStreamingInput || !isEditTool) && !patchFiles && (
+      {expanded && cardView !== "patch" && cardView !== "questionnaire" && (isStreamingInput || !isEditTool) && (
         toolFields ? (
           <div
             style={{
               padding: "6px 10px 8px",
               background: "var(--bg-subtle)",
-              borderTop: isError ? "1px solid rgba(248,113,113,0.25)" : "1px solid rgba(34,197,94,0.2)",
+              borderTop: statusSeparatorBorder(isError),
             }}
           >
             <ToolFieldRows fields={toolFields} />
@@ -1203,7 +1271,7 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
               lineHeight: 1.5,
               overflow: "auto",
               background: "var(--bg-subtle)",
-              borderTop: isError ? "1px solid rgba(248,113,113,0.25)" : "1px solid rgba(34,197,94,0.2)",
+              borderTop: statusSeparatorBorder(isError),
               whiteSpace: "pre-wrap",
               wordBreak: "break-all",
             }}
@@ -1213,25 +1281,30 @@ function ToolCallBlock({ block, result, duration, onOpenSession }: { block: Tool
         )
       )}
 
+      {/* ── Expanded: the questionnaire an ask_user_question call carried ── */}
+      {expanded && cardView === "questionnaire" && questionBlocks && (
+        <AskUserQuestionView blocks={questionBlocks} isError={isError} />
+      )}
+
       {/* ── Result images — always visible, independent of the collapsed details ── */}
       {resultImages.length > 0 && <ResultImages images={resultImages} isError={isError} />}
 
       {/* ── Expanded: applied-patch split diff ── */}
-      {expanded && patchFiles && (
-        <div style={{ borderTop: "1px solid rgba(34,197,94,0.15)", background: "var(--bg)" }}>
+      {expanded && cardView === "patch" && patchFiles && (
+        <div style={{ borderTop: statusResultBorder(false), background: "var(--bg)" }}>
           <SplitFilesView files={patchFiles} />
         </div>
       )}
 
       {/* ── Paired result — only shown when expanded ── */}
-      {expanded && result && patchFiles && isError && (
+      {expanded && result && cardView === "patch" && isError && (
         <PairedResult
           text={resultText ?? ""}
           isEmpty={resultIsEmpty}
           isError={isError}
         />
       )}
-      {expanded && result && !patchFiles && (
+      {expanded && result && cardView !== "patch" && !hidesResult && (
         resultDiff ? (
           <PairedDiffResult
             diff={resultDiff}
@@ -1258,7 +1331,7 @@ function PairedDiffResult({ diff }: {
   return (
     <div
       style={{
-        borderTop: "1px solid rgba(34,197,94,0.15)",
+        borderTop: statusResultBorder(false),
         background: "var(--bg)",
       }}
     >
@@ -1431,25 +1504,21 @@ function SplitDiffHeader({ title, side }: { title: string; side: "left" | "right
 }
 
 function SplitDiffCellView({ cell, side }: { cell: SplitDiffCell; side: "left" | "right" }) {
-  const bg =
-    cell.type === "added"
-      ? "rgba(34,197,94,0.12)"
-      : cell.type === "removed"
-      ? "rgba(248,113,113,0.13)"
-      : cell.type === "empty"
-      ? "var(--bg-subtle)"
-      : "transparent";
+  // An empty cell faces a line the other column has: the panel fills it, and
+  // its marker is the dim one an unchanged line carries.
+  const chrome =
+    cell.type === "empty"
+      ? { ...diffRowChrome("context"), fill: "var(--bg-subtle)" }
+      : diffRowChrome(cell.type);
   const marker =
     cell.type === "added" ? "+" : cell.type === "removed" ? "-" : " ";
-  const markerColor =
-    cell.type === "added" ? "#22c55e" : cell.type === "removed" ? "#f87171" : "var(--text-dim)";
 
   return (
     <div
       style={{
         display: "flex",
         minWidth: 0,
-        background: bg,
+        background: chrome.fill,
         borderRight: side === "left" ? "1px solid var(--border)" : "none",
       }}
     >
@@ -1471,7 +1540,7 @@ function SplitDiffCellView({ cell, side }: { cell: SplitDiffCell; side: "left" |
         style={{
           width: 18,
           padding: "0 5px",
-          color: markerColor,
+          color: chrome.prefixColor,
           userSelect: "none",
           fontWeight: cell.type === "context" || cell.type === "empty" ? 400 : 700,
           flexShrink: 0,
@@ -1495,6 +1564,12 @@ function SplitDiffCellView({ cell, side }: { cell: SplitDiffCell; side: "left" |
   );
 }
 
+/** A hunk header's row: the accent's tint and text, which are not status colours. */
+const HUNK_DIFF_ROW = {
+  fill: "color-mix(in srgb, var(--accent) 12%, transparent)",
+  prefixColor: "var(--accent)",
+};
+
 function PatchTextView({ text }: { text: string }) {
   const lines = text.split(/\r?\n/);
 
@@ -1506,27 +1581,21 @@ function PatchTextView({ text }: { text: string }) {
           line.startsWith("+") && !line.startsWith("+++") ? "added" :
           line.startsWith("-") && !line.startsWith("---") ? "removed" :
           "context";
-        const bg =
-          kind === "added" ? "rgba(34,197,94,0.12)" :
-          kind === "removed" ? "rgba(248,113,113,0.13)" :
-          kind === "hunk" ? "rgba(96,165,250,0.12)" :
-          "transparent";
-        const color =
-          kind === "added" ? "#22c55e" :
-          kind === "removed" ? "#f87171" :
-          kind === "hunk" ? "var(--accent)" :
-          "var(--text)";
+        // A hunk header is the accent's row, not a status colour's; everything else
+        // reads the one diff row chrome.
+        const chrome = kind === "hunk" ? HUNK_DIFF_ROW : diffRowChrome(kind);
+        const color = kind === "context" ? "var(--text)" : chrome.prefixColor;
 
         return (
           <div
             key={i}
             style={{
               display: "flex",
-              background: bg,
+              background: chrome.fill,
               borderLeft: kind === "added"
-                ? "3px solid #22c55e"
+                ? "3px solid var(--success)"
                 : kind === "removed"
-                ? "3px solid #f87171"
+                ? "3px solid var(--error)"
                 : kind === "hunk"
                 ? "3px solid var(--accent)"
                 : "3px solid transparent",
@@ -1613,7 +1682,7 @@ function ResultImages({ images, isError }: { images: ImageContent[]; isError: bo
         flexWrap: "wrap",
         padding: "10px",
         background: "var(--bg)",
-        borderTop: `1px solid ${isError ? "rgba(248,113,113,0.3)" : "rgba(34,197,94,0.15)"}`,
+        borderTop: statusResultBorder(isError),
       }}
     >
       {images.map((image, index) => {
@@ -1655,15 +1724,15 @@ function PairedResult({ text, isEmpty, isError }: {
   return (
     <div
       style={{
-        borderTop: `1px solid ${isError ? "rgba(248,113,113,0.3)" : "rgba(34,197,94,0.15)"}`,
-        background: isError ? "rgba(248,113,113,0.04)" : "var(--bg-subtle)",
+        borderTop: statusResultBorder(isError),
+        background: isError ? statusWash(STATUS_ERROR_COLOR, 4) : "var(--bg-subtle)",
       }}
     >
       <pre
         style={{
           margin: 0,
           padding: "8px 10px",
-          color: isError ? "#f87171" : (isEmpty ? "var(--text-dim)" : "var(--text-muted)"),
+          color: isError ? "var(--error)" : (isEmpty ? "var(--text-dim)" : "var(--text-muted)"),
           fontSize: "calc(12px + var(--chat-font-size-offset, 0px))",
           lineHeight: 1.5,
           overflow: "auto",

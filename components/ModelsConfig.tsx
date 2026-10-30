@@ -59,6 +59,7 @@ import { providerBadgeLabel } from "./enabled-models-helpers";
 import { OAuthPastePanel } from "./OAuthPastePanel";
 import { ProviderIcon } from "./ProviderIcon";
 import { ProviderUsageSummary } from "./ProviderUsageSummary";
+import { STATUS_ERROR_COLOR, STATUS_SUCCESS_COLOR, statusBorder } from "@/lib/status-colors";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -462,7 +463,7 @@ function ProviderDetail({ name, editingName, provider, onChange, onEditingNameCh
         )}
 
         {discoveryState.phase === "error" && (
-          <div style={{ padding: "7px 9px", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 5, color: "#ef4444", fontSize: 11, lineHeight: 1.4 }}>
+          <div style={{ padding: "7px 9px", border: statusBorder(STATUS_ERROR_COLOR, 30), borderRadius: 5, color: STATUS_ERROR_COLOR, fontSize: 11, lineHeight: 1.4 }}>
             {discoveryState.message}
           </div>
         )}
@@ -563,7 +564,7 @@ const LEVEL_COLORS: Record<ThinkingLevel, string> = {
   medium:  "#a78bfa",
   high:    "#f472b6",
   xhigh:   "#fb923c",
-  max:     "#ef4444",
+  max:     "var(--error)",
 };
 
 function ThinkingLevelMapEditor({
@@ -611,7 +612,7 @@ function ThinkingLevelMapEditor({
           fontWeight: 600,
         };
         const btnActiveDisabled: React.CSSProperties = {
-          background: "#ef4444",
+          background: "var(--error)",
           color: "#fff",
           fontWeight: 600,
         };
@@ -743,9 +744,9 @@ function HeaderListEditor({ headers, onChange }: {
   const rowBtnStyle = {
     padding: "6px 9px",
     background: "none",
-    border: "1px solid rgba(239,68,68,0.3)",
+    border: statusBorder(STATUS_ERROR_COLOR, 30),
     borderRadius: 4,
-    color: "#ef4444",
+    color: STATUS_ERROR_COLOR,
     cursor: "pointer",
     fontSize: 11,
     lineHeight: 1,
@@ -999,9 +1000,9 @@ function ModelDetail({
     ? catalogState.message
     : catalogResultSummary;
   const catalogStatusColor = catalogState.phase === "error"
-    ? "#ef4444"
+    ? "var(--error)"
     : catalogState.phase === "success" && catalogState.recommendation.price.status === "unreliable"
-      ? "#d97706"
+      ? "var(--warning)"
       : "var(--text-dim)";
   const costFields = [
     { key: "input", label: t("models.costInput") },
@@ -1049,6 +1050,9 @@ function ModelDetail({
           <SectionTitle>{t("i18n.model")}</SectionTitle>
         </ConfigDetailHeaderInfo>
         <ConfigDetailActions>
+          {/* The test chip's tint is the status token mixed into the panel
+              background, and its text is the theme's own, so the pair stays
+              readable in either scheme. */}
           {testSummary && (
             <span
               title={testSummary}
@@ -1056,10 +1060,10 @@ function ModelDetail({
                 maxWidth: 260,
                 height: 28,
                 padding: "0 8px",
-                border: `1px solid ${testState.phase === "error" ? "#fecaca" : testState.phase === "success" ? "#bbf7d0" : "var(--border)"}`,
+                border: testState.phase === "error" ? statusBorder(STATUS_ERROR_COLOR, 40) : testState.phase === "success" ? statusBorder(STATUS_SUCCESS_COLOR, 40) : "var(--border)",
                 borderRadius: 4,
-                background: testState.phase === "error" ? "#fee2e2" : testState.phase === "success" ? "#dcfce7" : "#e5e7eb",
-                color: "#111827",
+                background: testState.phase === "error" ? `color-mix(in srgb, ${STATUS_ERROR_COLOR} 18%, var(--bg-panel))` : testState.phase === "success" ? `color-mix(in srgb, ${STATUS_SUCCESS_COLOR} 18%, var(--bg-panel))` : "var(--bg-panel)",
+                color: "var(--text)",
                 fontSize: 11,
                 display: "inline-flex",
                 alignItems: "center",
@@ -1192,7 +1196,7 @@ function ModelDetail({
                 </Field>
               ))}
               {hasModelCostDraftValue(costDraft) && !parseCompleteModelCost(costDraft) && (
-                <div aria-live="polite" style={{ gridColumn: "1 / -1", color: "#d97706", fontSize: 10 }}>
+                <div aria-live="polite" style={{ gridColumn: "1 / -1", color: "var(--warning)", fontSize: 10 }}>
                   {t("models.costAllRequired")}
                 </div>
               )}
@@ -1459,8 +1463,8 @@ function OAuthDetail({ provider, onRefresh, enabledModels, contextSettings }: {
         </ConfigDetailHeaderInfo>
         <ConfigDetailActions>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: provider.loggedIn ? "#4ade80" : "var(--border)", display: "inline-block" }} />
-            <span style={{ fontSize: 11, color: provider.loggedIn ? "#4ade80" : "var(--text-dim)" }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: provider.loggedIn ? "var(--success)" : "var(--border)", display: "inline-block" }} />
+            <span style={{ fontSize: 11, color: provider.loggedIn ? "var(--success)" : "var(--text-dim)" }}>
                {provider.loggedIn ? t("i18n.connected") : t("i18n.notConnected")}
             </span>
           </div>
@@ -1566,10 +1570,10 @@ function OAuthDetail({ provider, onRefresh, enabledModels, contextSettings }: {
           <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)" }}>{loginState.message}</p>
         )}
         {loginState.phase === "success" && (
-             <p style={{ margin: 0, fontSize: 12, color: "#4ade80" }}>{t("i18n.connectedSuccessfully")}</p>
+             <p style={{ margin: 0, fontSize: 12, color: "var(--success)" }}>{t("i18n.connectedSuccessfully")}</p>
         )}
         {loginState.phase === "error" && (
-          <p style={{ margin: 0, fontSize: 12, color: "#f87171" }}>{loginState.message}</p>
+          <p style={{ margin: 0, fontSize: 12, color: "var(--error)" }}>{loginState.message}</p>
         )}
       </div>
 
@@ -1650,8 +1654,8 @@ function ApiKeyDetail({ provider, onRefresh, enabledModels, contextSettings }: {
         </ConfigDetailHeaderInfo>
         <ConfigDetailActions>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: provider.configured ? "#4ade80" : "var(--border)", display: "inline-block" }} />
-            <span style={{ fontSize: 11, color: provider.configured ? "#4ade80" : "var(--text-dim)" }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: provider.configured ? "var(--success)" : "var(--border)", display: "inline-block" }} />
+            <span style={{ fontSize: 11, color: provider.configured ? "var(--success)" : "var(--text-dim)" }}>
                {provider.configured ? t("i18n.configured") : t("i18n.notConfigured")}
             </span>
           </div>
@@ -1690,7 +1694,7 @@ function ApiKeyDetail({ provider, onRefresh, enabledModels, contextSettings }: {
           disabled={saving || !apiKey.trim() || savedOk}
           style={{
             padding: "6px 12px",
-            background: savedOk ? "#16a34a" : apiKey.trim() ? "var(--accent)" : "var(--bg-panel)",
+            background: savedOk ? "var(--success)" : apiKey.trim() ? "var(--accent)" : "var(--bg-panel)",
             border: "none", borderRadius: 5,
             color: savedOk ? "#fff" : apiKey.trim() ? "var(--accent-contrast)" : "var(--text-dim)",
             cursor: (saving || !apiKey.trim() || savedOk) ? "not-allowed" : "pointer",
@@ -1707,7 +1711,7 @@ function ApiKeyDetail({ provider, onRefresh, enabledModels, contextSettings }: {
         </button>
       </div>
 
-      {error && <p style={{ margin: 0, fontSize: 12, color: "#f87171" }}>{error}</p>}
+      {error && <p style={{ margin: 0, fontSize: 12, color: "var(--error)" }}>{error}</p>}
 
       <ProviderUsageSummary providerId={provider.id} enabled={provider.configured} />
 
@@ -2295,7 +2299,7 @@ export function ModelsConfig({ onClose, embedded = false, cwd = null }: {
 
         {/* Footer */}
         <ConfigFooter status={(loadError || saveError) ? (
-          <span style={{ color: "#f87171" }}>
+          <span style={{ color: "var(--error)" }}>
             {loadError ? t("models.configUnreadable", { error: loadError }) : saveError}
           </span>
         ) : t("models.applyHelp")}>

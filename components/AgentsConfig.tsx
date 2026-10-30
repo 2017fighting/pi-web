@@ -696,7 +696,7 @@ export function AgentsConfig({
                           variant="field"
                           placement="auto"
                         />
-                        {modelsError && <span style={{ color: "#ef4444", fontSize: 10 }}>{modelsError}</span>}
+                        {modelsError && <span style={{ color: "var(--error)", fontSize: 10 }}>{modelsError}</span>}
                       </div>
                     </Field>
                     <Field label={t("agents.thinking")}>
@@ -718,7 +718,7 @@ export function AgentsConfig({
           </ConfigDetailStack>
         </ConfigDetail>
       </ConfigSplitView>
-      <ConfigFooter status={(settingsError || error) && <span role="alert" style={{ color: "#ef4444" }}>{settingsError || error}</span>}>
+      <ConfigFooter status={(settingsError || error) && <span role="alert" style={{ color: "var(--error)" }}>{settingsError || error}</span>}>
         {editing && (
           <ConfigButton
             variant="primary"

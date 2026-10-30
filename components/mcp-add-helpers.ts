@@ -7,6 +7,7 @@ import type {
   McpScope,
   McpVariableReference,
 } from "@/lib/api-types";
+import type { Translate } from "@/lib/i18n/types";
 import {
   configValueEnvVarNames,
   fillMcpImportFields,
@@ -170,8 +171,6 @@ export const MCP_IMPORT_PROBLEM_KEYS = [
 export function mcpImportNoteSeverity(note: McpImportNote): McpImportNoteSeverity {
   return MCP_IMPORT_NOTE_SEVERITY[note.code] ?? "warning";
 }
-
-type Translate = (key: string, params?: Record<string, string | number>) => string;
 
 /**
  * A note as one line of text. Parameters are source text (a field label, an

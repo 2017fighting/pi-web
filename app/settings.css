@@ -176,7 +176,7 @@
 }
 
 .config-sidebar-group-error {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .config-sidebar-item {
@@ -356,7 +356,7 @@
 }
 
 .enabled-models-switch-error {
-  color: #ef4444;
+  color: var(--error);
   font-size: 11px;
 }
 
@@ -382,9 +382,9 @@
 
 .enabled-models-error {
   padding: 7px 9px;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
   border-radius: 5px;
-  color: #ef4444;
+  color: var(--error);
   font-size: 11px;
   line-height: 1.4;
 }
@@ -453,7 +453,7 @@
 }
 
 .model-context-input::placeholder { color: var(--text-dim); }
-.model-context-input[aria-invalid="true"] { border-color: #ef4444; }
+.model-context-input[aria-invalid="true"] { border-color: var(--error); }
 .model-context-input:disabled { opacity: 0.6; }
 
 .enabled-models-row-text {
@@ -543,7 +543,7 @@
 }
 
 .agents-feature-copy > .agents-feature-reload-notice {
-  color: #d97706;
+  color: var(--warning);
 }
 
 .agents-feature-actions {
@@ -581,7 +581,7 @@
 }
 
 .config-sidebar-message.is-error {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .config-sidebar-message.is-empty {
@@ -856,7 +856,7 @@
 }
 
 .config-detail-grid-value.is-error {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .config-detail-grid-value.is-mono {
@@ -996,7 +996,7 @@
 }
 
 .config-add-source-error {
-  color: #ef4444;
+  color: var(--error);
   font-size: 12px;
   white-space: pre-wrap;
 }
@@ -1088,11 +1088,11 @@
 }
 
 .skill-update-status.is-success {
-  color: #16a34a;
+  color: var(--success);
 }
 
 .skill-update-status.is-error {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .skill-description {
@@ -1114,7 +1114,7 @@
 }
 
 .skill-instructions-status.is-error {
-  color: #ef4444;
+  color: var(--error);
   overflow-wrap: anywhere;
 }
 
@@ -1143,11 +1143,11 @@
 }
 
 .config-footer-status-summary.is-warning {
-  color: #d97706;
+  color: var(--warning);
 }
 
 .config-footer-status-summary.is-error {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .config-footer-status-details summary {
@@ -1220,9 +1220,9 @@
 }
 
 .config-button-danger {
-  border-color: rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.06);
-  color: #ef4444;
+  border-color: color-mix(in srgb, var(--error) 35%, transparent);
+  background: color-mix(in srgb, var(--error) 6%, transparent);
+  color: var(--error);
 }
 
 .config-button-ghost {
@@ -1244,8 +1244,8 @@
 }
 
 .config-button-danger:not(:disabled):hover {
-  border-color: rgba(239, 68, 68, 0.5);
-  background: rgba(239, 68, 68, 0.12);
+  border-color: color-mix(in srgb, var(--error) 50%, transparent);
+  background: color-mix(in srgb, var(--error) 12%, transparent);
 }
 
 .config-button:focus-visible {
@@ -1259,8 +1259,8 @@
 }
 
 .config-button-primary.is-success {
-  border-color: #16a34a;
-  background: #16a34a;
+  border-color: var(--success);
+  background: var(--success);
   animation: saved-pop 0.45s ease;
 }
 
@@ -1958,7 +1958,7 @@
 
 .settings-general-error {
   margin: 8px 0 0;
-  color: #ef4444;
+  color: var(--error);
   font-size: 11px;
 }
 
@@ -2024,9 +2024,9 @@
 }
 
 @keyframes saved-pop {
-  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55); }
-  40%  { transform: scale(1.08); box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.25); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 55%, transparent); }
+  40%  { transform: scale(1.08); box-shadow: 0 0 0 6px color-mix(in srgb, var(--success) 25%, transparent); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
 }
 
 @keyframes saved-check-draw {
@@ -2052,11 +2052,11 @@
 }
 
 .mcp-sidebar-badge.is-warning {
-  color: #d97706;
+  color: var(--warning);
 }
 
 .mcp-sidebar-badge.is-error {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .mcp-sidebar-group-empty {
@@ -2113,7 +2113,7 @@
 }
 
 .mcp-config-line.is-warning {
-  color: #d97706;
+  color: var(--warning);
 }
 
 /* Secondary lines keep the pane's one text size; only the color steps back. */
@@ -2122,7 +2122,7 @@
 }
 
 .mcp-config-line.is-error {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .mcp-config-state {
@@ -2139,11 +2139,11 @@
 }
 
 .mcp-config-state.is-warning {
-  color: #d97706;
+  color: var(--warning);
 }
 
 .mcp-config-state.is-error {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .mcp-config-chips {
@@ -2316,11 +2316,11 @@ select.mcp-add-input {
 }
 
 .mcp-add-note.is-warning {
-  color: #d97706;
+  color: var(--warning);
 }
 
 .mcp-add-note.is-error {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .mcp-add-field {
@@ -2383,6 +2383,7 @@ select.mcp-add-input {
 .project-trust-icon {
   flex-shrink: 0;
   margin-top: 1px;
+  color: var(--warning);
 }
 
 .project-trust-content {
@@ -2428,7 +2429,7 @@ select.mcp-add-input {
   max-height: 30vh;
   padding: 0 18px 10px;
   overflow: auto;
-  color: #ef4444;
+  color: var(--error);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -2509,7 +2510,7 @@ select.mcp-add-input {
 }
 
 .project-trust-mcp-line.is-warning {
-  color: #d97706;
+  color: var(--warning);
 }
 
 .project-trust-mcp-line.is-dim {

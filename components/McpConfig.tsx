@@ -18,6 +18,7 @@ import type {
   ProjectTrustStatus,
 } from "@/lib/api-types";
 import { useI18n } from "@/hooks/useI18n";
+import type { Translate } from "@/lib/i18n/types";
 import { displayPathWithin, shortenPath } from "@/lib/display-path";
 import {
   mcpFieldLabel,
@@ -170,8 +171,6 @@ import {
   type McpSignInRun,
 } from "./mcp-sign-in-helpers";
 import { projectTrustReloadKey } from "./settings-ui-helpers";
-
-type Translate = ReturnType<typeof useI18n>["t"];
 
 /** What the panel has loaded; a project the route refused leaves the global listing and `projectError`. */
 export type McpConfigLoad =
