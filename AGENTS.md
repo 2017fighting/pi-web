@@ -292,8 +292,12 @@ Location: `~/.pi/agent/sessions/<encoded-cwd>/<timestamp>_<uuid>.jsonl`
 --text --text-muted --text-dim
 --accent --user-bg --tool-bg
 --success --error --warning
+--thinking-stroke --thinking-accent (the thinking glyph, drawn from --warning)
+--terminal-* (the terminal's own palette: --terminal-bg, --terminal-success, --terminal-error, --terminal-warning, …)
 --font-mono
 ```
+
+A status colour is a token, never a literal in a component: `--success` / `--error` / `--warning` are defined by every palette, and their translucent washes come from `lib/status-colors.ts`.
 
 ## Agent skills
 

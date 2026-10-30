@@ -4,11 +4,13 @@
  * declaration, so the washes below only ever reference `--success` /
  * `--error` / `--warning`; every palette defines them.
  *
- * This is the one home of those three token names and of the translucent
- * `color-mix()` shape drawn from them, so a surface imports a color or a wash
- * here rather than spelling `var(--error)` or `color-mix(...)` again. A mix of a
- * token into a surface (`var(--bg-panel)`, `var(--border)`) is not this shape
- * and stays where the surface draws it.
+ * This module names those three tokens and is the one home of their translucent
+ * `color-mix()` shape: a border, a fill or a chip imports `statusWash()` /
+ * `statusBorder()` (or the `STATUS_*_COLOR` names) rather than writing
+ * `color-mix(in srgb, var(--error) …, transparent)` again. A single token in a
+ * style — a text color, a `1px solid var(--error)` — is not that shape and is
+ * spelled where the surface draws it, as is a mix of a token into a surface
+ * (`var(--bg-panel)`, `var(--border)`).
  */
 
 /** A passed state's color: a tool's name, a status dot or label. */
