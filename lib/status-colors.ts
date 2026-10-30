@@ -54,7 +54,8 @@ export type DiffRowKind = "added" | "removed" | "context";
 export interface DiffRowChrome {
   /** The wash behind the line. */
   fill: string;
-  /** The colour of the line's `+` / `-` marker (or of the line, where a view colours it whole). */
+  /** The colour the line's `+` / `-` marker takes, and a changed line's own text
+   * where a view colours the line whole. */
   prefixColor: string;
 }
 

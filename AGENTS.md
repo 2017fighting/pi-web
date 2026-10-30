@@ -121,7 +121,7 @@ lib/
   tool-preset-preference.ts browser-persisted default preset for fresh sessions
   tool-fields.ts            a tool call's arguments as flat rows: all of them or no table
   ask-user-question-view.ts the ask_user_question card: recognition (exact name + questions shape), where the call stands, the collapsed summary, the answer/question pairing, the chosen option's preview and the result envelope it drops
-  status-colors.ts          the one home of the status tokens (`STATUS_SUCCESS_COLOR` / `STATUS_ERROR_COLOR` / `STATUS_WARNING_COLOR`) and of the translucent wash drawn from them (`statusWash` / `statusBorder`, `StatusColor`): a banner's line and fill, a chip, a diff row, the card's border, fill, separator and result lines, and a status word's color
+  status-colors.ts          the one home of the status tokens (`STATUS_SUCCESS_COLOR` / `STATUS_ERROR_COLOR` / `STATUS_WARNING_COLOR`), of the translucent wash drawn from them (`statusWash` / `statusBorder`, `StatusColor`) and of a diff row's fill and marker colour (`diffRowChrome`, `DiffRowKind`): a banner's line and fill, a chip, a diff row, the card's border, fill, separator and result lines, and a status word's color
   builtin-extensions.ts     codemode / tool-search / mcp built-ins, sandbox self-test, -builtin: switches
   codemode-settings.ts      Code mode automatic/always (+codemode in global defaultTools), codemode.mode and inlineBudget; project overrides
   codemode-view.ts          display helpers for codemode cards

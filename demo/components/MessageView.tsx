@@ -1504,19 +1504,21 @@ function SplitDiffHeader({ title, side }: { title: string; side: "left" | "right
 }
 
 function SplitDiffCellView({ cell, side }: { cell: SplitDiffCell; side: "left" | "right" }) {
-  // An empty cell is the gap facing a line the other column has.
-  const chrome = diffRowChrome(cell.type === "empty" ? "context" : cell.type);
-  const bg = cell.type === "empty" ? "var(--bg-subtle)" : chrome.fill;
+  // An empty cell faces a line the other column has: the panel fills it, and
+  // its marker is the dim one an unchanged line carries.
+  const chrome =
+    cell.type === "empty"
+      ? { ...diffRowChrome("context"), fill: "var(--bg-subtle)" }
+      : diffRowChrome(cell.type);
   const marker =
     cell.type === "added" ? "+" : cell.type === "removed" ? "-" : " ";
-  const markerColor = chrome.prefixColor;
 
   return (
     <div
       style={{
         display: "flex",
         minWidth: 0,
-        background: bg,
+        background: chrome.fill,
         borderRight: side === "left" ? "1px solid var(--border)" : "none",
       }}
     >
@@ -1538,7 +1540,7 @@ function SplitDiffCellView({ cell, side }: { cell: SplitDiffCell; side: "left" |
         style={{
           width: 18,
           padding: "0 5px",
-          color: markerColor,
+          color: chrome.prefixColor,
           userSelect: "none",
           fontWeight: cell.type === "context" || cell.type === "empty" ? 400 : 700,
           flexShrink: 0,
@@ -1562,6 +1564,12 @@ function SplitDiffCellView({ cell, side }: { cell: SplitDiffCell; side: "left" |
   );
 }
 
+/** A hunk header's row: the accent's tint and text, which are not status colours. */
+const HUNK_DIFF_ROW = {
+  fill: "color-mix(in srgb, var(--accent) 12%, transparent)",
+  prefixColor: "var(--accent)",
+};
+
 function PatchTextView({ text }: { text: string }) {
   const lines = text.split(/\r?\n/);
 
@@ -1573,21 +1581,17 @@ function PatchTextView({ text }: { text: string }) {
           line.startsWith("+") && !line.startsWith("+++") ? "added" :
           line.startsWith("-") && !line.startsWith("---") ? "removed" :
           "context";
-        const chrome = diffRowChrome(kind === "hunk" ? "context" : kind);
-        const bg =
-          kind === "hunk" ? "color-mix(in srgb, var(--accent) 12%, transparent)" :
-          chrome.fill;
-        const color =
-          kind === "hunk" ? "var(--accent)" :
-          kind === "context" ? "var(--text)" :
-          chrome.prefixColor;
+        // A hunk header is the accent's row, not a status colour's; everything else
+        // reads the one diff row chrome.
+        const chrome = kind === "hunk" ? HUNK_DIFF_ROW : diffRowChrome(kind);
+        const color = kind === "context" ? "var(--text)" : chrome.prefixColor;
 
         return (
           <div
             key={i}
             style={{
               display: "flex",
-              background: bg,
+              background: chrome.fill,
               borderLeft: kind === "added"
                 ? "3px solid var(--success)"
                 : kind === "removed"
