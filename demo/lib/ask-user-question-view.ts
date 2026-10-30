@@ -56,6 +56,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * The answers list a result's `details` carries, or null when it carries none — the
+ * one read of that field, so the answers' presence and their absence cannot be
+ * spelled two ways.
+ */
+function answersOf(details: unknown): unknown[] | null {
+  return isRecord(details) && Array.isArray(details.answers) ? details.answers : null;
+}
+
 function questionOf(value: unknown): AskUserQuestionQuestion | null {
   if (!isRecord(value) || typeof value.question !== "string" || !Array.isArray(value.options)) return null;
   const options: AskUserQuestionOption[] = [];
@@ -97,14 +106,16 @@ export function parseAskUserQuestion(call: { toolName: string; input: unknown; r
 }
 
 /**
- * One answer's choice: the option labels it picked and the text typed alongside
- * them. A label the question does not offer is not one of them: the extension only
- * ever answers with a label it offered, so an entry naming another one names a
- * choice nobody could have made, and every reader below drops it here.
+ * One answer's choice: the option labels it picked, the text typed alongside them
+ * and — for a single-select pick — that option's preview. A label the question does
+ * not offer is not one of them: the extension only ever answers with a label it
+ * offered, so an entry naming another one names a choice nobody could have made,
+ * and every reader below drops it here.
  */
 interface AnswerChoice {
   labels: string[];
   custom: string | null;
+  preview: string | null;
 }
 
 /**
@@ -118,25 +129,36 @@ function optionFor(question: AskUserQuestionQuestion | undefined, label: string)
 }
 
 /**
+ * The labels an answer entry names, before the question's own options are
+ * consulted: a `multi` answer's `selected[]`, an `option` answer's `answer`. This is
+ * the one place that knows which field each `kind` keeps its labels in, so the
+ * reader below and the card's "can it show this answer?" check cannot read a kind
+ * differently.
+ */
+function namedLabels(answer: Record<string, unknown>): string[] {
+  const named = answer.kind === "multi" ? answer.selected : answer.kind === "option" ? [answer.answer] : [];
+  return Array.isArray(named)
+    ? named.filter((label): label is string => typeof label === "string" && label.length > 0)
+    : [];
+}
+
+/** The text typed in place of, or beside, the offered options; null when none. */
+function typedAnswer(answer: Record<string, unknown>): string | null {
+  const typed = answer.kind === "multi" || answer.kind === "custom" ? answer.answer : null;
+  return typeof typed === "string" && typed ? typed : null;
+}
+
+/**
  * What one answer reads as, whatever its `kind`, in the shape every reader below
  * takes. `question` is the one the entry answers — the source of the labels it
- * could have named — and an entry read without one names no label at all.
+ * could have named — and an entry read without one names no label at all. The
+ * preview belongs to a single-select pick, so a typed or multi-select answer has
+ * none, however its options read.
  */
 function readAnswer(answer: Record<string, unknown>, question: AskUserQuestionQuestion | undefined): AnswerChoice {
-  const offered = (label: string) => optionFor(question, label) !== undefined;
-  if (answer.kind === "multi") {
-    const labels = Array.isArray(answer.selected)
-      ? answer.selected.filter((label): label is string => typeof label === "string" && label.length > 0 && offered(label))
-      : [];
-    return { labels, custom: typeof answer.answer === "string" && answer.answer ? answer.answer : null };
-  }
-  if (answer.kind === "custom") {
-    return { labels: [], custom: typeof answer.answer === "string" && answer.answer ? answer.answer : null };
-  }
-  if (answer.kind === "option" && typeof answer.answer === "string" && answer.answer) {
-    return { labels: offered(answer.answer) ? [answer.answer] : [], custom: null };
-  }
-  return { labels: [], custom: null };
+  const labels = namedLabels(answer).filter((label) => optionFor(question, label) !== undefined);
+  const chosen = answer.kind === "option" && labels.length === 1 ? optionFor(question, labels[0]) : undefined;
+  return { labels, custom: typedAnswer(answer), preview: chosen?.preview || null };
 }
 
 /**
@@ -220,9 +242,7 @@ export function askUserQuestionState(
   // result is a failure, not what the user chose, and its text stays below the card.
   if (isErrorResult(result)) return { kind: "answered", label: null };
 
-  const first = isRecord(details) && Array.isArray(details.answers)
-    ? details.answers.find((answer) => isRecord(answer) && answer.questionIndex === 0)
-    : undefined;
+  const first = answersOf(details)?.find((answer) => isRecord(answer) && answer.questionIndex === 0);
   return { kind: "answered", label: first && isRecord(first) ? answerLabel(readAnswer(first, questions[0])) : null };
 }
 
@@ -252,22 +272,16 @@ export function askUserQuestionHidesResult(
   result: AskUserQuestionResult | undefined,
 ): boolean {
   if (!result || isErrorResult(result)) return false;
-  const details = result.details;
-  if (!isRecord(details) || !Array.isArray(details.answers)) return false;
+  const answers = answersOf(result.details);
+  if (answers === null) return false;
 
-  for (const answer of details.answers) {
+  for (const answer of answers) {
     if (!isRecord(answer)) continue;
     const question = typeof answer.questionIndex === "number" ? questions[answer.questionIndex] : undefined;
+    // An entry for a question the call never carried names something the card has
+    // no block to show, so the result keeps its text as well.
     if (question === undefined) return false;
-    if (answer.kind === "option" && typeof answer.answer === "string" && answer.answer) {
-      if (optionFor(question, answer.answer) === undefined) return false;
-    } else if (answer.kind === "multi" && Array.isArray(answer.selected)) {
-      for (const selected of answer.selected) {
-        if (typeof selected === "string" && selected.length > 0 && optionFor(question, selected) === undefined) {
-          return false;
-        }
-      }
-    }
+    if (namedLabels(answer).some((label) => optionFor(question, label) === undefined)) return false;
   }
 
   return true;
@@ -342,16 +356,6 @@ export interface AskUserQuestionBlock {
 }
 
 /**
- * The preview to show for one answer, when `label` names the single option the
- * answer picked. A preview belongs to a single-select choice, so a typed answer
- * and a multi-select pick show none, however their options read.
- */
-function chosenPreview(label: string | undefined, question: AskUserQuestionQuestion): string | null {
-  if (label === undefined) return null;
-  return optionFor(question, label)?.preview || null;
-}
-
-/**
  * The questionnaire the expanded card draws: one block per question, each with
  * the labels to tick and the text and note to show. Answers are matched to
  * questions by `questionIndex`, and a question with no answer reads `unanswered`
@@ -369,7 +373,7 @@ export function askUserQuestionBlocks(
   result: AskUserQuestionResult | undefined,
 ): AskUserQuestionBlock[] {
   const details = result?.details;
-  const answers = isRecord(details) && Array.isArray(details.answers) ? details.answers : [];
+  const answers = answersOf(details) ?? [];
   // Any result that is not a dismissal is a submit, so its blank questions read
   // `unanswered` just as the collapsed row does; a dismissal leaves every question
   // unticked without calling it unanswered. The check is on the result, not on its
@@ -393,7 +397,7 @@ export function askUserQuestionBlocks(
       // so the body says the same rather than drawing an unticked list that looks
       // answered — one predicate, `isBlankChoice()`, over one `readAnswer()`.
       unanswered: submitted && isBlankChoice(choice),
-      preview: chosenPreview(answer.kind === "option" ? choice.labels[0] : undefined, question),
+      preview: choice.preview,
     };
   });
 }
