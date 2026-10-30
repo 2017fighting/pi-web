@@ -33,7 +33,7 @@ import {
   type FileViewerDisplayMode as DisplayMode,
   type FileViewerState,
 } from "@/lib/file-viewer-state";
-import { diffRowChrome } from "@/lib/status-colors";
+import { diffRowChrome, liveDotChrome } from "@/lib/status-colors";
 
 export type { FileViewerState } from "@/lib/file-viewer-state";
 
@@ -486,6 +486,8 @@ function ImageViewer({ filePath, cwd, sourceSessionId, watchEnabled = true }: Pr
 
   const formatSizeStr = size != null ? formatSize(size) : null;
 
+  const liveDot = liveDotChrome(watching);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <div
@@ -509,16 +511,16 @@ function ImageViewer({ filePath, cwd, sourceSessionId, watchEnabled = true }: Pr
         {formatSizeStr && <span>{formatSizeStr}</span>}
         <span
           title={watching ? t("i18n.liveSync") : t("i18n.notWatching")}
-          style={{ display: "flex", alignItems: "center", gap: 4, color: watching ? "var(--success)" : "var(--text-dim)" }}
+          style={{ display: "flex", alignItems: "center", gap: 4, color: liveDot.color }}
         >
           <span
             style={{
               width: 7,
               height: 7,
               borderRadius: "50%",
-              background: watching ? "var(--success)" : "var(--border)",
+              background: liveDot.background,
               display: "inline-block",
-              boxShadow: watching ? "0 0 4px var(--success)" : "none",
+              boxShadow: liveDot.boxShadow,
             }}
           />
           {watching ? "live" : "static"}
@@ -656,6 +658,8 @@ function AudioViewer({ filePath, cwd, sourceSessionId, watchEnabled = true }: Pr
 
   const src = getFileApiUrl(filePath, "read", sourceSessionId, bust ? { v: bust } : undefined);
 
+  const liveDot = liveDotChrome(watching);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <div
@@ -679,16 +683,16 @@ function AudioViewer({ filePath, cwd, sourceSessionId, watchEnabled = true }: Pr
         {size != null && <span>{formatSize(size)}</span>}
         <span
           title={watching ? t("i18n.liveSync") : t("i18n.notWatching")}
-          style={{ display: "flex", alignItems: "center", gap: 4, color: watching ? "var(--success)" : "var(--text-dim)" }}
+          style={{ display: "flex", alignItems: "center", gap: 4, color: liveDot.color }}
         >
           <span
             style={{
               width: 7,
               height: 7,
               borderRadius: "50%",
-              background: watching ? "var(--success)" : "var(--border)",
+              background: liveDot.background,
               display: "inline-block",
-              boxShadow: watching ? "0 0 4px var(--success)" : "none",
+              boxShadow: liveDot.boxShadow,
             }}
           />
           {watching ? "live" : "static"}
@@ -809,6 +813,8 @@ function VideoViewer({ filePath, cwd, sourceSessionId, watchEnabled = true }: Pr
 
   const src = getFileApiUrl(filePath, "read", sourceSessionId, bust ? { v: bust } : undefined);
 
+  const liveDot = liveDotChrome(watching);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <div
@@ -832,16 +838,16 @@ function VideoViewer({ filePath, cwd, sourceSessionId, watchEnabled = true }: Pr
         {size != null && <span>{formatSize(size)}</span>}
         <span
           title={watching ? t("i18n.liveSync") : t("i18n.notWatching")}
-          style={{ display: "flex", alignItems: "center", gap: 4, color: watching ? "var(--success)" : "var(--text-dim)" }}
+          style={{ display: "flex", alignItems: "center", gap: 4, color: liveDot.color }}
         >
           <span
             style={{
               width: 7,
               height: 7,
               borderRadius: "50%",
-              background: watching ? "var(--success)" : "var(--border)",
+              background: liveDot.background,
               display: "inline-block",
-              boxShadow: watching ? "0 0 4px var(--success)" : "none",
+              boxShadow: liveDot.boxShadow,
             }}
           />
           {watching ? "live" : "static"}
@@ -997,6 +1003,8 @@ function DocumentViewer({ filePath, cwd, sourceSessionId, initialPage, watchEnab
     };
   }, [filePath, isPdf, sourceSessionId, watchEnabled]);
 
+  const liveDot = liveDotChrome(watching);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <div
@@ -1020,16 +1028,16 @@ function DocumentViewer({ filePath, cwd, sourceSessionId, initialPage, watchEnab
         <DownloadLink filePath={filePath} sourceSessionId={sourceSessionId} />
         <span
           title={watching ? t("i18n.liveSync") : t("i18n.notWatching")}
-          style={{ display: "flex", alignItems: "center", gap: 4, color: watching ? "var(--success)" : "var(--text-dim)", flexShrink: 0 }}
+          style={{ display: "flex", alignItems: "center", gap: 4, color: liveDot.color, flexShrink: 0 }}
         >
           <span
             style={{
               width: 7,
               height: 7,
               borderRadius: "50%",
-              background: watching ? "var(--success)" : "var(--border)",
+              background: liveDot.background,
               display: "inline-block",
-              boxShadow: watching ? "0 0 4px var(--success)" : "none",
+              boxShadow: liveDot.boxShadow,
             }}
           />
           {watching ? "live" : "static"}
@@ -1522,6 +1530,8 @@ function TextFileViewer({
     ? t("files.deleted")
     : `${language} · ${lines.length} lines · ${formatSize(data!.size)}`;
 
+  const liveDot = liveDotChrome(watching);
+
   return (
     <div className="file-viewer-shell" style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", position: "relative" }}>
       <div
@@ -1549,8 +1559,8 @@ function TextFileViewer({
             aria-label={watching ? t("i18n.liveSync") : t("i18n.notWatching")}
             className="file-viewer-live-indicator"
             style={{
-              background: watching ? "var(--success)" : "var(--border)",
-              boxShadow: watching ? "0 0 4px var(--success)" : "none",
+              background: liveDot.background,
+              boxShadow: liveDot.boxShadow,
             }}
           />
         )}

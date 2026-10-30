@@ -131,6 +131,27 @@ test("every diff view draws its rows from the one chrome helper", () => {
   }
 });
 
+// Ticket #20: a file view's live indicator — the caption's colour, the dot's
+// fill and its glow while watching — was five identical copies in each viewer.
+// `liveDotChrome()` in `lib/status-colors.ts` names that trio once, and every
+// header of both viewers reads it.
+const LIVE_DOT_SOURCES = ["components/FileViewer.tsx", "demo/components/FileViewer.tsx"];
+const HAND_WRITTEN_LIVE_DOT = /watching \? "var\(--success\)" : "var\(--(?:border|text-dim)\)"|boxShadow: watching \?/;
+// The image, audio and video previews, the document preview and the diff header.
+const LIVE_DOT_HEADERS = 5;
+
+test("both file viewers draw their live indicator from the one chrome helper", () => {
+  for (const file of LIVE_DOT_SOURCES) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+    assert.doesNotMatch(source, HAND_WRITTEN_LIVE_DOT, `${file} spells the live indicator's chrome again`);
+    assert.equal(
+      source.match(/liveDotChrome\(/g)?.length,
+      LIVE_DOT_HEADERS,
+      `${file} reads liveDotChrome() once per header, so no header draws its own dot`,
+    );
+  }
+});
+
 // Ticket #14 gave the thinking glyph its own token pair: its amber is not a
 // status colour, and it is the same in either theme, so it is defined once on
 // `:root` rather than per palette. Both copies draw it.
