@@ -35,7 +35,7 @@ These are declined however well they are implemented:
 - Show each fact once, in the place where pi produces it.
 - One good default beats a setting. Add a switch only when both choices are common.
 - Keep the top bar and the composer quiet. Configuration belongs in Settings.
-- Use the existing theme tokens in `app/globals.css`. Do not add new colors.
+- Use the existing theme tokens in `app/globals.css`. Do not add new colors: a state a theme has to show (success, error, warning) is a token every palette defines, not a literal in a component.
 
 ## Before you open a pull request
 

@@ -27,6 +27,7 @@ import type {
   ProjectTrustStatus,
 } from "@/lib/api-types";
 import type { McpImportFieldValue, McpImportNote } from "@/lib/mcp-import";
+import { STATUS_ERROR_COLOR, STATUS_WARNING_COLOR } from "@/lib/status-colors";
 import { itemsToSwitch } from "./settings-ui-helpers";
 
 // Pure helpers for Settings › MCP (components/McpConfig.tsx): what each row
@@ -218,7 +219,7 @@ export function mcpRowStateTone(state: McpServerRowState): McpStateTone {
 export function mcpStatusDot(tone: McpStateTone): { active?: boolean; color?: string } {
   if (tone === "on") return { active: true };
   if (tone === "off") return { active: false };
-  return { color: tone === "error" ? "#ef4444" : "#f59e0b" };
+  return { color: tone === "error" ? STATUS_ERROR_COLOR : STATUS_WARNING_COLOR };
 }
 
 /** When a status was written: a test's end, or a session's report, or its closing of that connection. */

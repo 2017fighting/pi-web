@@ -153,3 +153,45 @@ export function collapsesProcessDetails(answer: AssistantMessage | null): boolea
     block.type === "image" || (block.type === "text" && block.text.trim().length > 0)
   ));
 }
+
+/**
+ * The message the live run owns: its last assistant message. The assistant
+ * message carrying a tool call ends, and its tool starts, before the tool
+ * answers, so a call the run is still waiting on sits there — after a steer
+ * opened a later group as well, which the live tail alone does not cover. -1
+ * when no run is live, or when the live run is not running a tool: then a
+ * result-less call is the leftover of a run that ended without writing a result.
+ */
+export function liveRunMessageIndex(
+  messages: readonly { role?: AgentMessage["role"] }[],
+  { runActive, toolRunning }: { runActive: boolean; toolRunning: boolean },
+): number {
+  if (!runActive || !toolRunning) return -1;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === "assistant") return index;
+  }
+  return -1;
+}
+
+/**
+ * The messages that carry a tool call the live run is running right now. The
+ * assistant message holding a call ends, and the call starts, before the answer
+ * arrives, so the run's own running calls — not the messages' order — say which
+ * card is still waiting on a person: a steer's group can open after that
+ * message, and the last assistant message can be a later one, while the run is
+ * still on the same call. Empty when nothing is running.
+ */
+export function liveToolCallMessageIndexes(
+  messages: readonly { role?: AgentMessage["role"]; content?: unknown }[],
+  runningToolCallIds: ReadonlySet<string> | null | undefined,
+): Set<number> {
+  const indexes = new Set<number>();
+  if (!runningToolCallIds || runningToolCallIds.size === 0) return indexes;
+  messages.forEach((message, index) => {
+    if (message.role !== "assistant" || !Array.isArray(message.content)) return;
+    const carriesRunningCall = (message.content as readonly { type?: string; toolCallId?: string }[])
+      .some((block) => block?.type === "toolCall" && typeof block.toolCallId === "string" && runningToolCallIds.has(block.toolCallId));
+    if (carriesRunningCall) indexes.add(index);
+  });
+  return indexes;
+}

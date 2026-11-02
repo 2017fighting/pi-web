@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useEffect, useLayoutEffect, useImperativeHandle, forwardRef, KeyboardEvent } from "react";
+import type { Translate } from "@/lib/i18n/types";
 import type { BuiltinSlashCommandResult, CompactResultInfo, QueuedMessages, SlashCommandInfo } from "@/hooks/useAgentSession";
 import type { SkillsResponse } from "@/lib/api-types";
 import type { TextContent, UserMessage } from "@/lib/types";
@@ -28,6 +29,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useI18n } from "@/hooks/useI18n";
 import { useChatAppearance } from "@/hooks/useChatAppearance";
 import type { ToolPreset } from "@/lib/tool-presets";
+import { STATUS_ERROR_COLOR, STATUS_WARNING_COLOR, statusBorder, statusWash } from "@/lib/status-colors";
 import { ModelSelector, type ModelSelectorOption } from "./ModelSelector";
 
 export { filterModelOptions } from "./ModelSelector";
@@ -266,7 +268,7 @@ const SLASH_SOURCE_ORDER: Record<SlashCommandSource, number> = {
   skill: 3,
 };
 
-function slashMatchRank(command: SlashCommandPaletteItem, query: string, t: (key: string) => string): number {
+function slashMatchRank(command: SlashCommandPaletteItem, query: string, t: Translate): number {
   const name = command.name.toLowerCase();
   const description = getSlashDescription(command, t).toLowerCase();
   if (name === query) return 0;
@@ -276,7 +278,7 @@ function slashMatchRank(command: SlashCommandPaletteItem, query: string, t: (key
   return 4;
 }
 
-function getSlashDescription(command: SlashCommandPaletteItem, t: (key: string) => string): string {
+function getSlashDescription(command: SlashCommandPaletteItem, t: Translate): string {
   return command.source === "builtin" ? t(command.description) : command.description ?? "";
 }
 
@@ -455,7 +457,7 @@ function QueuedMessageRow({ kind, text }: { kind: "steer" | "follow-up"; text: s
 }
 
 function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "warning"; title: string; body: string; onClose?: () => void }) {
-  const color = tone === "error" ? "239,68,68" : "234,179,8";
+  const color = tone === "error" ? STATUS_ERROR_COLOR : STATUS_WARNING_COLOR;
   return (
     <div
       role="alert"
@@ -467,10 +469,10 @@ function ModelNoticeBanner({ tone, title, body, onClose }: { tone: "error" | "wa
         marginBottom: 8,
         padding: "7px 10px",
         overflowY: "auto",
-        border: `1px solid rgba(${color},0.3)`,
+        border: statusBorder(color, 30),
         borderRadius: 6,
-        background: `rgba(${color},0.07)`,
-        color: `rgb(${color})`,
+        background: statusWash(color, 7),
+        color,
         fontSize: 11,
         lineHeight: 1.45,
       }}
@@ -1725,10 +1727,10 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
             style={{
               marginBottom: 8,
               padding: "7px 10px",
-              background: "rgba(239,68,68,0.07)",
-              border: "1px solid rgba(239,68,68,0.3)",
+              background: statusWash(STATUS_ERROR_COLOR, 7),
+              border: statusBorder(STATUS_ERROR_COLOR, 30),
               borderRadius: 6,
-              color: "#ef4444",
+              color: STATUS_ERROR_COLOR,
               fontFamily: "var(--font-mono)",
               fontSize: 12,
               lineHeight: 1.5,
@@ -2596,22 +2598,22 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                     padding: isMobile ? "0 6px" : "8px 12px",
                     width: isMobile ? "auto" : undefined,
                     height: 32,
-                    background: isCompacting ? "rgba(239,68,68,0.08)" : "none",
+                    background: isCompacting ? statusWash(STATUS_ERROR_COLOR, 8) : "none",
                     border: "none",
                     borderRadius: 9,
-                    color: isCompacting ? "#ef4444" : "var(--text-muted)",
+                    color: isCompacting ? STATUS_ERROR_COLOR : "var(--text-muted)",
                     cursor: (isStreaming && !isCompacting) ? "not-allowed" : "pointer",
                     fontSize: 12, opacity: (isStreaming && !isCompacting) ? 0.5 : 1,
                     transition: "background 0.12s, color 0.12s",
                   }}
                   onMouseEnter={(e) => {
                     if (isStreaming && !isCompacting) return;
-                    e.currentTarget.style.background = isCompacting ? "rgba(239,68,68,0.16)" : "var(--bg-hover)";
-                    e.currentTarget.style.color = isCompacting ? "#ef4444" : "var(--text)";
+                    e.currentTarget.style.background = isCompacting ? statusWash(STATUS_ERROR_COLOR, 16) : "var(--bg-hover)";
+                    e.currentTarget.style.color = isCompacting ? STATUS_ERROR_COLOR : "var(--text)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = isCompacting ? "rgba(239,68,68,0.08)" : "none";
-                    e.currentTarget.style.color = isCompacting ? "#ef4444" : "var(--text-muted)";
+                    e.currentTarget.style.background = isCompacting ? statusWash(STATUS_ERROR_COLOR, 8) : "none";
+                    e.currentTarget.style.color = isCompacting ? STATUS_ERROR_COLOR : "var(--text-muted)";
                   }}
                    title={isCompacting ? t("chat.stopCompaction") : t("chat.compactContext")}
                    aria-label={isCompacting ? t("chat.stopCompaction") : t("chat.compactContext")}
@@ -2636,17 +2638,17 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                   display: "flex", alignItems: "center", gap: 6,
                   padding: "8px 14px",
                   height: 32,
-                  background: "rgba(239,68,68,0.08)",
-                  border: "1px solid rgba(239,68,68,0.3)",
+                  background: statusWash(STATUS_ERROR_COLOR, 8),
+                  border: statusBorder(STATUS_ERROR_COLOR, 30),
                   borderRadius: 9,
-                  color: "#ef4444",
+                  color: STATUS_ERROR_COLOR,
                   cursor: "pointer",
                   fontSize: 12, fontWeight: 600,
                   whiteSpace: "nowrap", letterSpacing: "-0.01em",
                   transition: "background 0.12s",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.16)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = statusWash(STATUS_ERROR_COLOR, 16); }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = statusWash(STATUS_ERROR_COLOR, 8); }}
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <rect x="1.5" y="1.5" width="7" height="7" rx="1.5" fill="currentColor" />

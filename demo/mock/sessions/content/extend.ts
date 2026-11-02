@@ -147,6 +147,72 @@ A few things to notice about how that ran:
         },
       ],
     },
+    {
+      kind: "user",
+      gapMinutes: 2,
+      text: {
+        en: "Nice. Can an extension ask me a question in the chat, and use my answer?",
+        zh: "不错。扩展能在聊天里向我提问，并根据我的回答继续吗？",
+      },
+    },
+    {
+      kind: "assistant",
+      rounds: [
+        {
+          thinking: {
+            en: "The demo's ask_user_question extension is exactly that: the model calls it with a questions list, the chat shows a card, and the answers come back as the tool result. Ask two questions so the card's header, options and multi-select tag all show.",
+            zh: "演示里的 ask_user_question 扩展正是如此：模型带着问题列表调用它，聊天里显示一张卡片，回答作为工具结果返回。问两个问题，让卡片的头部、选项和多选标记都显示出来。",
+          },
+          seconds: 5,
+          tools: [{
+            name: "ask_user_question",
+            args: {
+              questions: [
+                {
+                  question: "Which part should I go deeper on next?",
+                  header: "Focus",
+                  options: [
+                    { label: "Extension tools", description: "Tools a package adds, shown as a card like this one." },
+                    { label: "Prompt templates", description: "Reusable prompts you run with /name." },
+                  ],
+                  multiSelect: false,
+                },
+                {
+                  question: "What should I bring next time?",
+                  header: "Follow-up",
+                  options: [
+                    { label: "A worked example" },
+                    { label: "A checklist" },
+                    { label: "Links to the docs" },
+                  ],
+                  multiSelect: true,
+                },
+              ],
+            },
+            result: 'User has answered your questions: "Which part should I go deeper on next?"="Extension tools", "What should I bring next time?"="A worked example, Links to the docs". You can now continue with the user\'s answers in mind.',
+            details: {
+              cancelled: false,
+              answers: [
+                { questionIndex: 0, question: "Which part should I go deeper on next?", kind: "option", answer: "Extension tools" },
+                { questionIndex: 1, question: "What should I bring next time?", kind: "multi", selected: ["A worked example", "Links to the docs"], answer: "" },
+              ],
+            },
+            seconds: 7,
+          }],
+        },
+        {
+          seconds: 11,
+          text: {
+            en: `That was the **\`ask_user_question\`** card — an extension tool, not one of the built-ins. The call carried two questions and their options; the card above shows the header chip, the questions as Markdown, the options with the chosen ones ticked, and a **multi-select** tag on the second. The result underneath is hidden, because the card already says the same thing.
+
+It comes from the \`ask_user_question\` extension (\`npm:@juicesharp/rpiv-ask-user-question\`): a package can ask you something mid-run and read the answer back, so a long job can check a decision with you without leaving the composer. Extensions like this are what **Settings → Plugins** installs.`,
+            zh: `这就是 **\`ask_user_question\`** 卡片——来自一个扩展工具，而不是内置工具。这次调用带了两个问题和各自的选项；上面的卡片显示了头部标签、以 Markdown 呈现的问题、被勾选的选项，以及第二个问题上的 **多选** 标记。下面的结果被隐藏了，因为卡片已经说了同样的事。
+
+它来自 \`ask_user_question\` 扩展（\`npm:@juicesharp/rpiv-ask-user-question\`）：一个包可以在运行中途向你提问，并把回答读回去，所以长任务可以在不离开输入框的情况下和你确认一个决定。**设置 → 插件** 安装的就是这类扩展。`,
+          },
+        },
+      ],
+    },
   ],
 };
 

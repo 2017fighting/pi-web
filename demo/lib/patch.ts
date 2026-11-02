@@ -1,4 +1,4 @@
-import type { TranslationParams } from "./i18n/types";
+import type { Translate } from "./i18n/types";
 
 export type SplitDiffCellType = "context" | "removed" | "added" | "empty";
 
@@ -193,7 +193,7 @@ export function unifiedDiffLines(file: SplitDiffFile): Array<UnifiedDiffLine | S
 }
 
 /** A gap row's known count as "N unchanged lines" in the UI language. */
-export function diffGapLabel(count: number, t: (key: string, params?: TranslationParams) => string): string {
+export function diffGapLabel(count: number, t: Translate): string {
   return count === 1 ? t("diff.unchangedLine") : t("diff.unchangedLines", { count });
 }
 

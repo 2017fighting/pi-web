@@ -1,0 +1,120 @@
+"use client";
+
+import { MarkdownBody } from "./MarkdownBody";
+import { useI18n } from "@/hooks/useI18n";
+import { STATUS_SUCCESS_COLOR, STATUS_WARNING_COLOR, statusSeparatorBorder, statusWash } from "@/lib/status-colors";
+import type { AskUserQuestionBlock } from "@/lib/ask-user-question-view";
+
+// The expanded `ask_user_question` card: the questionnaire as a read-only record.
+// Each question is one block — its header chip, its Markdown text, and its options
+// with the chosen ones ticked, the chosen option's preview under it — followed by a
+// typed answer and a note on their own lines. Nothing here is clickable: the call is
+// over, and a click would fabricate an answer that never happened.
+
+/** A question's short header as a chip: the collapsed row's summary and each body block's label. */
+export const QUESTION_CHIP_STYLE: React.CSSProperties = {
+  padding: "1px 6px",
+  borderRadius: 4,
+  background: statusWash(STATUS_SUCCESS_COLOR, 15),
+  color: STATUS_SUCCESS_COLOR,
+  fontSize: 11,
+  fontWeight: 600,
+  flexShrink: 0,
+};
+
+const TAG_STYLE: React.CSSProperties = {
+  padding: "1px 6px",
+  borderRadius: 4,
+  border: "1px solid var(--border)",
+  color: "var(--text-dim)",
+  fontSize: 11,
+  flexShrink: 0,
+};
+
+const LINE_LABEL_STYLE: React.CSSProperties = {
+  ...TAG_STYLE,
+  alignSelf: "flex-start",
+};
+
+/** The text typed or the note, each on its own line under the options. */
+function AnswerLine({ label, text }: { label: string; text: string }) {
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "baseline", minWidth: 0 }}>
+      <span style={LINE_LABEL_STYLE}>{label}</span>
+      <span style={{ color: "var(--text-muted)", overflowWrap: "anywhere", minWidth: 0 }}>{text}</span>
+    </div>
+  );
+}
+
+function QuestionBlock({ block }: { block: AskUserQuestionBlock }) {
+  const { t } = useI18n();
+  const { question } = block;
+  // The call's own flag, or a result that ticked more than one option: a `multi`
+  // answer to a question whose call never set the flag still ticks several, and two
+  // ticks have to read as "both" rather than as a rendering mistake.
+  const multiSelect = question.multiSelect || block.selected.length > 1;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+      {(question.header || multiSelect || block.unanswered) && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          {question.header && <span style={QUESTION_CHIP_STYLE}>{question.header}</span>}
+          {multiSelect && <span style={TAG_STYLE}>{t("askUserQuestion.multiSelect")}</span>}
+          {block.unanswered && (
+            <span style={{ ...TAG_STYLE, border: `1px solid ${STATUS_WARNING_COLOR}`, color: STATUS_WARNING_COLOR }}>
+              {t("askUserQuestion.unanswered")}
+            </span>
+          )}
+        </div>
+      )}
+      <MarkdownBody className="markdown-questionnaire-question">{question.question}</MarkdownBody>
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+        {question.options.map((option) => {
+          const chosen = block.selected.includes(option.label);
+          return (
+            <li key={option.label} style={{ display: "flex", gap: 6, alignItems: "baseline", minWidth: 0 }}>
+              <span
+                aria-hidden="true"
+                style={{ color: chosen ? STATUS_SUCCESS_COLOR : "var(--text-dim)", flexShrink: 0, width: 12, textAlign: "center" }}
+              >
+                {chosen ? "✓" : "○"}
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+                <span style={{ color: "var(--text-muted)", fontWeight: chosen ? 600 : 400 }}>{option.label}</span>
+                {option.description && (
+                  <span style={{ color: "var(--text-dim)", overflowWrap: "anywhere" }}>{option.description}</span>
+                )}
+                {chosen && block.preview !== null && (
+                  <MarkdownBody className="markdown-questionnaire-preview">{block.preview}</MarkdownBody>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {block.custom !== null && <AnswerLine label={t("askUserQuestion.custom")} text={block.custom} />}
+      {block.note !== null && <AnswerLine label={t("askUserQuestion.note")} text={block.note} />}
+    </div>
+  );
+}
+
+export function AskUserQuestionView({ blocks, isError }: {
+  blocks: readonly AskUserQuestionBlock[];
+  isError: boolean;
+}) {
+  return (
+    <div
+      style={{
+        borderTop: statusSeparatorBorder(isError),
+        background: "var(--bg-subtle)",
+        padding: "8px 10px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+      }}
+    >
+      {blocks.map((block, index) => (
+        <QuestionBlock key={index} block={block} />
+      ))}
+    </div>
+  );
+}

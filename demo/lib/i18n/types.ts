@@ -4,6 +4,9 @@ export type Locale = "en" | "zh-CN" | "zh-TW";
 /** 翻译字符串使用的简单插值参数。 */
 export type TranslationParams = Record<string, string | number>;
 
+/** 翻译函数的形状：把稳定 key 和可选插值参数解析为当前语言的文本。 */
+export type Translate = (key: string, params?: TranslationParams) => string;
+
 /** 可注册的语言包定义。 */
 export interface LocalePlugin {
   /** 语言包唯一标识。 */

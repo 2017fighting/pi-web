@@ -1,7 +1,5 @@
 import type { AgentPhase } from "@/hooks/useAgentSession";
-
-/** The i18n translate function shape this module needs. */
-export type Translate = (key: string, params?: Record<string, string | number>) => string;
+import type { Translate } from "@/lib/i18n/types";
 
 /**
  * The status line shown while the agent is working.

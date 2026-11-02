@@ -299,7 +299,7 @@ export function DirectoryPicker({ onCancel, onSelect, initialPath, busy = false,
           ) : (
             <div style={{ padding: 8, color: "var(--text-dim)", fontSize: 11 }}>{t("directoryPicker.noSubdirectories")}</div>
           )}
-          {(loadError || error) && <div style={{ padding: "8px", color: "#dc2626", fontSize: 11 }}>{loadError ?? error}</div>}
+          {(loadError || error) && <div style={{ padding: "8px", color: "var(--error)", fontSize: 11 }}>{loadError ?? error}</div>}
         </div>
 
         <div className="directory-picker-footer" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, flexShrink: 0, padding: "10px 18px", borderTop: "1px solid var(--border)" }}>
@@ -371,7 +371,7 @@ export function DirectoryPicker({ onCancel, onSelect, initialPath, busy = false,
                   className="directory-picker-path"
                   style={{ ...textInputStyle, width: "100%", boxSizing: "border-box" }}
                 />
-                {createError && <div style={{ marginTop: 7, color: "#dc2626", fontSize: 11, lineHeight: 1.35 }}>{createError}</div>}
+                {createError && <div style={{ marginTop: 7, color: "var(--error)", fontSize: 11, lineHeight: 1.35 }}>{createError}</div>}
                 <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
                   <button
                     className="directory-picker-action"
